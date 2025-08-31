@@ -1,50 +1,90 @@
-# Welcome to your Expo app 👋
+# Tech Challenge 3 - Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Este é o repositório para a aplicação mobile do Tech Challenge 3, desenvolvida com React Native e Expo.
 
-## Get started
+## 🛠️ Tecnologias Utilizadas
 
-1. Install dependencies
+- **React Native**: Framework para desenvolvimento de aplicações móveis multiplataforma.
+- **Expo**: Plataforma e conjunto de ferramentas para facilitar o desenvolvimento com React Native.
+- **TypeScript**: Superset do JavaScript que adiciona tipagem estática.
+- **ESLint**: Ferramenta para identificar e reportar padrões no código, garantindo qualidade e consistência.
+- **Jest**: Framework para testes unitários.
+- **GitHub Actions**: Para automação do fluxo de Integração Contínua (CI).
 
+## ✅ Pré-requisitos
+
+Antes de começar, certifique-se de ter o seguinte instalado em sua máquina:
+
+- **Node.js** (versão 20 ou superior - use o `.nvmrc` para garantir a versão correta com `nvm use`).
+- **npm** ou **Yarn**.
+- **Expo Go**: Aplicativo para Android e iOS que permite visualizar o projeto em um dispositivo físico.
+
+## 📦 Instalação
+
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/Koubatz/tech-challenge-3-mobile.git
+   ```
+
+2. Navegue até o diretório do projeto:
+   ```bash
+   cd tech-challenge-3-mobile
+   ```
+
+3. Instale as dependências:
    ```bash
    npm install
    ```
 
-2. Start the app
+## ▶️ Executando o Projeto
 
+1. Inicie o servidor de desenvolvimento do Metro Bundler:
    ```bash
-   npx expo start
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+2. Após o servidor iniciar, um QR Code será exibido no terminal.
+3. Abra o aplicativo **Expo Go** no seu celular e escaneie o QR Code para carregar o aplicativo.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🌿 Fluxo de Desenvolvimento (Obrigatório)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Para manter a integridade e a qualidade do nosso código, a branch `main` é protegida. **Nenhum push direto é permitido.** Todas as alterações devem passar por um processo de Pull Request e revisão.
 
-## Get a fresh project
+### 1. Criando uma Nova Branch
 
-When you're ready, run:
+Nunca trabalhe diretamente na branch `main`. Crie uma nova branch a partir da `main` atualizada, seguindo o padrão de nomenclatura abaixo:
+
+- **Features**: `feat/nome-da-feature` (ex: `feat/login-screen`)
+- **Correções**: `fix/descricao-do-bug` (ex: `fix/button-alignment`)
 
 ```bash
-npm run reset-project
+# Garanta que sua branch main local está atualizada
+git checkout main
+git pull origin main
+
+# Crie sua nova branch
+git checkout -b feat/sua-nova-funcionalidade
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Abrindo um Pull Request (PR)
 
-## Learn more
+Após finalizar suas alterações e fazer os commits, envie sua branch para o repositório remoto e abra um Pull Request.
 
-To learn more about developing your project with Expo, look at the following resources:
+1. Envie sua branch:
+   ```bash
+   git push origin feat/sua-nova-funcionalidade
+   ```
+2. Acesse o repositório no GitHub. Um aviso para criar um Pull Request a partir da sua branch recém-enviada aparecerá. Clique nele.
+3. Preencha um título e uma descrição clara para o seu PR, explicando o que foi feito.
+4. **Aguarde a aprovação**: O fluxo de CI (Integração Contínua) será executado automaticamente para rodar o linter e os testes. Além disso, um dos membros da equipe listados no `CODEOWNERS` precisará revisar e aprovar suas alterações.
+5. Após a aprovação e o sucesso da CI, seu Pull Request poderá ser "mergeado" na `main`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 🧑‍💻 Equipe (CODEOWNERS)
 
-## Join the community
+As seguintes pessoas são responsáveis pela revisão e aprovação de código neste projeto:
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- @Koubatz
+- @luckasnix
+- @Nsingrid
+- @jvcorado
+- @coelhorafaela
