@@ -15,11 +15,14 @@
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
-    "@tamagui/config": "^1.132.23",
-    "@tamagui/core": "^1.132.23",
+    "@tamagui/config": "1.132.25",
+    "@tamagui/core": "1.132.25",
+    "@tamagui/lucide-icons": "1.132.25",
+    "@tamagui/portal": "1.132.25",
     "expo": "~53.0.20",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.7",
+    "expo-document-picker": "~13.1.6",
     "expo-font": "~13.3.2",
     "expo-haptics": "~14.1.4",
     "expo-image": "~2.4.0",
@@ -38,9 +41,7 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-web": "~0.20.0",
-    "react-native-webview": "13.13.5",
-    "tamagui": "^1.132.23"
+    "tamagui": "1.132.25"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
