@@ -5,6 +5,8 @@ import { createTamagui, TamaguiProvider } from "tamagui";
 
 const config = createTamagui(defaultConfig);
 
+import "@/services/firebase";
+
 export default function RootLayout() {
   return (
     <TamaguiProvider config={config}>
