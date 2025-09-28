@@ -1,18 +1,18 @@
+import { SegmentControl } from "@/components/SegmentControl";
+import { TransactionItem } from "@/components/TransactionItem";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
+  Text as RNText,
   ScrollView,
   TouchableOpacity,
   View,
-  Text as RNText,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { TransactionItem } from "@/components/TransactionItem";
-import { SegmentControl } from "@/components/SegmentControl";
 
-export default function DashboardScreen() {
+export default function HomeScreen() {
   const [balanceVisible, setBalanceVisible] = React.useState(true);
   const [activeTab, setActiveTab] = React.useState<"income" | "expense">(
     "expense"
@@ -139,7 +139,7 @@ export default function DashboardScreen() {
               paddingHorizontal: 16,
               paddingVertical: 12,
               marginHorizontal: -16,
-              marginTop: -16,
+              marginTop: -80,
             }}
           >
             <View
@@ -374,6 +374,7 @@ export default function DashboardScreen() {
           borderBottomRightRadius: 0,
           height: 430,
           maxHeight: 430,
+          marginBottom: -40,
         }}
       >
         <RNText
