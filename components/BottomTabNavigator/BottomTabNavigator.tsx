@@ -1,8 +1,12 @@
-import HomeScreen from "@/app/home";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { Link } from "expo-router";
+import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { Button } from "tamagui";
+
+import HomeScreen from "@/app/home";
 import { TabBar } from "./TabBar";
-import { BottomTabNavigatorProps, TabItem } from "./types";
+import type { BottomTabNavigatorProps, TabItem } from "./types";
 
 export function BottomTabNavigator({
   activeTab,
@@ -28,6 +32,9 @@ export function BottomTabNavigator({
               title="Extrato"
               description="Extrato de transações"
             />
+            <Link href="/new-transaction" asChild>
+              <Button>Nova transação</Button>
+            </Link>
           </View>
         );
       case "dashboard":
@@ -106,5 +113,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 24,
     opacity: 0.8,
+    marginBottom: 20,
   },
 });
