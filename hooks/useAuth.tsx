@@ -1,31 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from 'firebase/auth';
-import { onAuthStateChange, signIn, signUp, signOut, getCurrentUser, isFirebaseAvailable } from '../services/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User } from 'firebase/auth';
+import React, { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
 
-// Mock user para desenvolvimento quando Firebase não estiver configurado
-const createMockUser = (email: string): User => ({
-  uid: 'mock-user-' + Date.now(),
-  email,
-  emailVerified: true,
-  displayName: null,
-  photoURL: null,
-  phoneNumber: null,
-  providerId: 'mock',
-  isAnonymous: false,
-  metadata: {
-    creationTime: new Date().toISOString(),
-    lastSignInTime: new Date().toISOString(),
-  },
-  providerData: [],
-  refreshToken: 'mock-refresh-token',
-  tenantId: null,
-  delete: async () => {},
-  getIdToken: async () => 'mock-token',
-  getIdTokenResult: async () => ({} as any),
-  reload: async () => {},
-  toJSON: () => ({}),
-} as User);
+import { createBankAccount, getCurrentUser, isFirebaseAvailable, onAuthStateChange, signIn, signOut, signUp } from '../services/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -45,85 +22,64 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const firebaseConfigured = isFirebaseAvailable();
+  const firebaseConfiguredRef = useRef(isFirebaseAvailable());
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
 
-    const initializeAuth = async () => {
-      if (firebaseConfigured) {
-        try {
-          // Configurar Firebase Auth
-          unsubscribe = onAuthStateChange(async (user) => {
-            setUser(user);
-            setLoading(false);
-            
-            // Persistir estado de autenticação
-            if (user) {
-              await AsyncStorage.setItem('userToken', user.uid);
-            } else {
-              await AsyncStorage.removeItem('userToken');
-            }
-          });
+    const setupAuthListener = () => {
+      firebaseConfiguredRef.current = isFirebaseAvailable();
 
-          // Verificar se há um usuário logado ao inicializar
-          const token = await AsyncStorage.getItem('userToken');
-          const currentUser = getCurrentUser();
-          
-          if (token && currentUser) {
-            setUser(currentUser);
-          }
-          
-          setLoading(false);
-        } catch (error: any) {
-          console.warn('Erro ao configurar Firebase Auth:', error.message);
-          setLoading(false);
-        }
-      } else {
-        // Modo de desenvolvimento - verificar se há um usuário mock salvo
-        console.warn('Firebase não configurado, usando modo de desenvolvimento');
-        try {
-          const mockUserData = await AsyncStorage.getItem('mockUser');
-          if (mockUserData) {
-            const userData = JSON.parse(mockUserData);
-            setUser(createMockUser(userData.email));
-          }
-        } catch (storageError) {
-          console.error('Erro ao verificar usuário mock:', storageError);
-        }
-        
+      if (!firebaseConfiguredRef.current) {
+        console.error('Firebase Auth não está configurado. Verifique as variáveis de ambiente.');
+        setLoading(false);
+        return;
+      }
+
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        AsyncStorage.setItem('userToken', currentUser.uid).catch(() => undefined);
         setLoading(false);
       }
+
+      unsubscribe = onAuthStateChange(async (firebaseUser) => {
+        setUser(firebaseUser);
+
+        if (firebaseUser) {
+          await AsyncStorage.setItem('userToken', firebaseUser.uid);
+        } else {
+          await AsyncStorage.removeItem('userToken');
+        }
+
+        setLoading(false);
+      });
     };
 
-    initializeAuth();
+    setupAuthListener();
 
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
     };
-  }, [firebaseConfigured]);
+  }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setLoading(true);
       
-      if (firebaseConfigured) {
-        const userCredential = await signIn(email, password);
-        setUser(userCredential.user);
-        await AsyncStorage.setItem('userToken', userCredential.user.uid);
-      } else {
-        // Modo de desenvolvimento - simular login
-        if (password.length < 6) {
-          throw new Error('A senha deve ter pelo menos 6 caracteres');
-        }
-        
-        const mockUser = createMockUser(email);
-        setUser(mockUser);
-        await AsyncStorage.setItem('userToken', mockUser.uid);
-        await AsyncStorage.setItem('mockUser', JSON.stringify({ email }));
+      if (!firebaseConfiguredRef.current) {
+        firebaseConfiguredRef.current = isFirebaseAvailable();
       }
+
+      if (!firebaseConfiguredRef.current) {
+        throw new Error('Firebase Auth não está configurado. Verifique as variáveis de ambiente.');
+      }
+
+      const userCredential = await signIn(email, password);
+      setUser(userCredential.user);
+      await AsyncStorage.setItem('userToken', userCredential.user.uid);
       
       return { success: true };
     } catch (error: any) {
@@ -168,28 +124,74 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       
-      if (firebaseConfigured) {
-        const userCredential = await signUp(email, password);
-        setUser(userCredential.user);
-        await AsyncStorage.setItem('userToken', userCredential.user.uid);
-      } else {
-        // Modo de desenvolvimento - simular cadastro
-        if (password.length < 6) {
-          throw new Error('A senha deve ter pelo menos 6 caracteres');
-        }
-        
-        const mockUser = createMockUser(email);
-        setUser(mockUser);
-        await AsyncStorage.setItem('userToken', mockUser.uid);
-        await AsyncStorage.setItem('mockUser', JSON.stringify({ email }));
+      if (!firebaseConfiguredRef.current) {
+        firebaseConfiguredRef.current = isFirebaseAvailable();
       }
+
+      if (!firebaseConfiguredRef.current) {
+        throw new Error('Firebase Auth não está configurado. Verifique as variáveis de ambiente.');
+      }
+
+      const userCredential = await signUp(email, password);
+
+      try {
+        const callableResult = await createBankAccount({
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+          ownerName: userCredential.user.email,
+        });
+
+        const callableData = callableResult.data as { success?: boolean; message?: string } | undefined;
+        if (callableData && callableData.success === false) {
+          throw new Error(callableData.message ?? 'Não foi possível criar a conta bancária.');
+        }
+      } catch (bankAccountError: any) {
+        console.error('Erro ao criar conta bancária:', bankAccountError);
+
+        await AsyncStorage.removeItem('userToken');
+
+        if (firebaseConfiguredRef.current) {
+          try {
+            await signOut();
+          } catch (signOutError) {
+            console.error('Erro ao desfazer cadastro após falha na criação da conta bancária:', signOutError);
+          }
+        }
+
+        const formattedError = new Error(
+          bankAccountError?.message ?? 'Erro ao criar conta bancária. Tente novamente mais tarde.'
+        );
+        (formattedError as any).code = bankAccountError?.code ?? 'functions/create-bank-account';
+        throw formattedError;
+      }
+
+      setUser(userCredential.user);
+      await AsyncStorage.setItem('userToken', userCredential.user.uid);
       
       return { success: true };
     } catch (error: any) {
       console.error('Erro no cadastro:', error);
+      let errorMessage = error.message || 'Erro ao criar conta';
+
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'Este email já está cadastrado. Tente fazer login ou use outro email.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Email inválido. Verifique o formato do email.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+            break;
+          default:
+            errorMessage = error.message || 'Erro ao criar conta';
+        }
+      }
+
       return { 
         success: false, 
-        error: error.message || 'Erro ao criar conta' 
+        error: errorMessage 
       };
     } finally {
       setLoading(false);
@@ -198,13 +200,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      if (firebaseConfigured) {
+      if (!firebaseConfiguredRef.current) {
+        firebaseConfiguredRef.current = isFirebaseAvailable();
+      }
+
+      if (firebaseConfiguredRef.current) {
         await signOut();
       }
       
       setUser(null);
       await AsyncStorage.removeItem('userToken');
-      await AsyncStorage.removeItem('mockUser');
     } catch (error) {
       console.error('Erro no logout:', error);
     }

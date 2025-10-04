@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from 'expo-status-bar';
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import {
   Button,
@@ -79,7 +79,7 @@ export default function LoginScreen() {
       } else {
         showToast(result.error || "Erro ao fazer login", "error");
       }
-    } catch (error) {
+    } catch {
       showToast("Erro inesperado. Tente novamente.", "error");
     }
   };
@@ -101,7 +101,7 @@ export default function LoginScreen() {
       } else {
         showToast(result.error || "Erro ao criar conta", "error");
       }
-    } catch (error) {
+    } catch {
       showToast("Erro inesperado. Tente novamente.", "error");
     }
   };

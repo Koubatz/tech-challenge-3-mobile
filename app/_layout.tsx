@@ -4,9 +4,9 @@ import { Stack } from "expo-router";
 import { createTamagui, TamaguiProvider } from "tamagui";
 import { AuthProvider } from '../hooks/useAuth';
 
-const config = createTamagui(defaultConfig);
-
 import "@/services/firebase";
+
+const config = createTamagui(defaultConfig);
 
 export default function RootLayout() {
   return (

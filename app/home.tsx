@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 
 import { BottomTabNavigator } from '@/components/BottomTabNavigator';
@@ -25,7 +25,13 @@ const tabs = [
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('home');
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/');
+    }
+  }, [loading, user]);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -52,20 +58,30 @@ export default function HomeScreen() {
     );
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#294FC1" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
-      {/* Header com informações do usuário */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <Text style={styles.welcomeText}>Bem-vindo!</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
+          <Text style={styles.userEmail}>{user.email}</Text>
         </View>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Sair</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Navegação principal */}
       <View style={styles.content}>
         <BottomTabNavigator
           activeTab={activeTab}
@@ -81,6 +97,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',

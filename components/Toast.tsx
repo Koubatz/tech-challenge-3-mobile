@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { Animated, Dimensions } from 'react-native';
-import { Text, XStack, YStack } from 'tamagui';
+import { Animated } from 'react-native';
+import { Text, XStack } from 'tamagui';
 
 interface ToastProps {
   visible: boolean;
@@ -10,8 +10,6 @@ interface ToastProps {
   onHide: () => void;
   duration?: number;
 }
-
-const { width } = Dimensions.get('window');
 
 export default function Toast({ 
   visible, 
@@ -22,6 +20,23 @@ export default function Toast({
 }: ToastProps) {
   const translateY = React.useRef(new Animated.Value(-100)).current;
   const opacity = React.useRef(new Animated.Value(0)).current;
+
+  const hideToast = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onHide();
+    });
+  }, [onHide, opacity, translateY]);
 
   useEffect(() => {
     if (visible) {
@@ -46,24 +61,7 @@ export default function Toast({
 
       return () => clearTimeout(timer);
     }
-  }, [visible]);
-
-  const hideToast = () => {
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: -100,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onHide();
-    });
-  };
+  }, [visible, duration, hideToast, opacity, translateY]);
 
   const getToastConfig = () => {
     switch (type) {

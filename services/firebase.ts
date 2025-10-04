@@ -6,13 +6,13 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   getAuth,
+  getReactNativePersistence,
   initializeAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  getReactNativePersistence,
   User
 } from 'firebase/auth';
-import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions';
+import { connectFunctionsEmulator, getFunctions, httpsCallable, HttpsCallableResult } from 'firebase/functions';
 
 // Configuração Firebase usando variáveis de ambiente
 const firebaseConfig: FirebaseOptions = {
@@ -29,10 +29,11 @@ let auth: Auth | null = null;
 let functions: any = null;
 
 // Verificar se estamos em desenvolvimento
-const isDevelopment = __DEV__ || process.env.NODE_ENV === 'development';
+const isDevelopment = false;
 
 // Inicializar Firebase
 try {
+  console.log('Inicializando Firebase com config:', firebaseConfig);
   if (!getApps().length) {
     app = initializeApp(firebaseConfig);
   } else {
@@ -74,6 +75,28 @@ try {
 }
 
 export const healthCheck = httpsCallable(functions, 'healthCheck');
+
+type CreateBankAccountPayload = {
+  uid: string;
+  email?: string | null;
+  ownerName?: string | null;
+};
+
+type CreateBankAccountResponse = {
+  success?: boolean;
+  message?: string;
+};
+
+export const createBankAccount = async (
+  payload: CreateBankAccountPayload
+): Promise<HttpsCallableResult<CreateBankAccountResponse>> => {
+  if (!functions) {
+    throw new Error('Firebase Functions não está configurado');
+  }
+
+  const callable = httpsCallable(functions, 'createBankAccount');
+  return callable(payload);
+};
 
 // Funções de autenticação
 export const signIn = async (email: string, password: string) => {
