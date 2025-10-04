@@ -1,26 +1,23 @@
-import { SegmentControl } from "@/components/SegmentControl";
-import { TransactionItem, TransactionItemProps } from "@/components/TransactionItem";
+import React, { useState } from "react";
+import { ScrollView, Text as RNText, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import React from "react";
+
+import { SegmentControl } from "@/components/SegmentControl";
 import {
-  Text as RNText,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+  TransactionItem as TransactionItemComponent,
+} from "@/components/TransactionItem";
+import type { TransactionItem as Transaction } from "@/components/TransactionItem";
 
-export default function HomeScreen() {
-  const [balanceVisible, setBalanceVisible] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState<"income" | "expense">(
-    "expense"
-  );
+export function HomeTabContent() {
+  const [balanceVisible, setBalanceVisible] = useState(true);
+  const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
 
-  const toggleBalance = () => setBalanceVisible(!balanceVisible);
+  const toggleBalance = () => setBalanceVisible((prev) => !prev);
 
-  const transactions: TransactionItemProps[] = [
+  const transactions: Transaction[] = [
     {
       id: 1,
       title: "Restaurant",
@@ -113,7 +110,7 @@ export default function HomeScreen() {
     },
   ];
 
-  const filteredTransactions = transactions.filter((t) => t.type === activeTab);
+  const filteredTransactions = transactions.filter((transaction) => transaction.type === activeTab);
 
   return (
     <SafeAreaView
@@ -129,7 +126,6 @@ export default function HomeScreen() {
         }}
       >
         <View style={{ padding: 16, gap: 16 }}>
-          {/* Header */}
           <View
             style={{
               flexDirection: "row",
@@ -169,7 +165,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Balance Card */}
           <View
             style={{
               backgroundColor: "#294FC1",
@@ -241,7 +236,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Action Buttons */}
           <View style={{ gap: 12 }}>
             <View
               style={{
@@ -387,7 +381,6 @@ export default function HomeScreen() {
           Transações recentes
         </RNText>
 
-        {/* Segment Control */}
         <SegmentControl
           options={[
             { key: "expense", label: "Despesas" },
@@ -397,10 +390,12 @@ export default function HomeScreen() {
           onOptionChange={(key) => setActiveTab(key as "income" | "expense")}
         />
 
-        {/* Transactions List */}
         <ScrollView>
           {filteredTransactions.map((transaction) => (
-            <TransactionItem key={transaction.id} transaction={transaction} />
+            <TransactionItemComponent
+              key={transaction.id}
+              transaction={transaction}
+            />
           ))}
         </ScrollView>
       </View>

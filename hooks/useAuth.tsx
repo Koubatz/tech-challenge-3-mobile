@@ -1,0 +1,242 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User } from 'firebase/auth';
+import React, { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
+
+import { createBankAccount, getCurrentUser, isFirebaseAvailable, onAuthStateChange, signIn, signOut, signUp } from '../services/firebase';
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  isAuthenticated: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const firebaseConfiguredRef = useRef(isFirebaseAvailable());
+
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    const setupAuthListener = () => {
+      firebaseConfiguredRef.current = isFirebaseAvailable();
+
+      if (!firebaseConfiguredRef.current) {
+        console.error('Firebase Auth não está configurado. Verifique as variáveis de ambiente.');
+        setLoading(false);
+        return;
+      }
+
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        AsyncStorage.setItem('userToken', currentUser.uid).catch(() => undefined);
+        setLoading(false);
+      }
+
+      unsubscribe = onAuthStateChange(async (firebaseUser) => {
+        setUser(firebaseUser);
+
+        if (firebaseUser) {
+          await AsyncStorage.setItem('userToken', firebaseUser.uid);
+        } else {
+          await AsyncStorage.removeItem('userToken');
+        }
+
+        setLoading(false);
+      });
+    };
+
+    setupAuthListener();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setLoading(true);
+      
+      if (!firebaseConfiguredRef.current) {
+        firebaseConfiguredRef.current = isFirebaseAvailable();
+      }
+
+      if (!firebaseConfiguredRef.current) {
+        throw new Error('Firebase Auth não está configurado. Verifique as variáveis de ambiente.');
+      }
+
+      const userCredential = await signIn(email, password);
+      setUser(userCredential.user);
+      await AsyncStorage.setItem('userToken', userCredential.user.uid);
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('Erro no login:', error);
+      
+      // Tratar erros específicos do Firebase
+      let errorMessage = 'Erro ao fazer login';
+      
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/invalid-credential':
+          case 'auth/wrong-password':
+          case 'auth/user-not-found':
+            errorMessage = 'Email ou senha incorretos. Verifique suas credenciais e tente novamente.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Email inválido. Verifique o formato do email.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'Esta conta foi desabilitada. Entre em contato com o suporte.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Muitas tentativas de login. Tente novamente mais tarde.';
+            break;
+          default:
+            errorMessage = error.message || 'Erro ao fazer login';
+        }
+      } else {
+        errorMessage = error.message || 'Erro ao fazer login';
+      }
+      
+      return { 
+        success: false, 
+        error: errorMessage
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setLoading(true);
+      
+      if (!firebaseConfiguredRef.current) {
+        firebaseConfiguredRef.current = isFirebaseAvailable();
+      }
+
+      if (!firebaseConfiguredRef.current) {
+        throw new Error('Firebase Auth não está configurado. Verifique as variáveis de ambiente.');
+      }
+
+      const userCredential = await signUp(email, password);
+
+      try {
+        const callableResult = await createBankAccount({
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+          ownerName: userCredential.user.email,
+        });
+
+        const callableData = callableResult.data as { success?: boolean; message?: string } | undefined;
+        if (callableData && callableData.success === false) {
+          throw new Error(callableData.message ?? 'Não foi possível criar a conta bancária.');
+        }
+      } catch (bankAccountError: any) {
+        console.error('Erro ao criar conta bancária:', bankAccountError);
+
+        await AsyncStorage.removeItem('userToken');
+
+        if (firebaseConfiguredRef.current) {
+          try {
+            await signOut();
+          } catch (signOutError) {
+            console.error('Erro ao desfazer cadastro após falha na criação da conta bancária:', signOutError);
+          }
+        }
+
+        const formattedError = new Error(
+          bankAccountError?.message ?? 'Erro ao criar conta bancária. Tente novamente mais tarde.'
+        );
+        (formattedError as any).code = bankAccountError?.code ?? 'functions/create-bank-account';
+        throw formattedError;
+      }
+
+      setUser(userCredential.user);
+      await AsyncStorage.setItem('userToken', userCredential.user.uid);
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('Erro no cadastro:', error);
+      let errorMessage = error.message || 'Erro ao criar conta';
+
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'Este email já está cadastrado. Tente fazer login ou use outro email.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Email inválido. Verifique o formato do email.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+            break;
+          default:
+            errorMessage = error.message || 'Erro ao criar conta';
+        }
+      }
+
+      return { 
+        success: false, 
+        error: errorMessage 
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async (): Promise<void> => {
+    try {
+      if (!firebaseConfiguredRef.current) {
+        firebaseConfiguredRef.current = isFirebaseAvailable();
+      }
+
+      if (firebaseConfiguredRef.current) {
+        await signOut();
+      }
+      
+      setUser(null);
+      await AsyncStorage.removeItem('userToken');
+    } catch (error) {
+      console.error('Erro no logout:', error);
+    }
+  };
+
+
+
+  const value: AuthContextType = {
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    isAuthenticated: !!user,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+};

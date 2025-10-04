@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text as RNText, View } from "react-native";
 
-export interface TransactionItem {
+export interface TransactionItemProps {
   id: number;
   title: string;
   amount: number;
@@ -15,7 +15,7 @@ export interface TransactionItem {
 export const TransactionItem = ({
   transaction,
 }: {
-  transaction: TransactionItem;
+  transaction: TransactionItemProps;
 }) => (
   <View
     style={{

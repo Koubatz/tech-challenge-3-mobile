@@ -4,7 +4,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "tamagui";
 
-import HomeScreen from "@/app/home";
+import { HomeTabContent } from "@/components/Home";
 import { TabBar } from "./TabBar";
 import type { BottomTabNavigatorProps, TabItem } from "./types";
 
@@ -24,7 +24,7 @@ export function BottomTabNavigator({
   const renderContent = () => {
     switch (activeTab) {
       case "home":
-        return <HomeScreen />;
+        return <HomeTabContent />;
 
       case "statement":
         return (
