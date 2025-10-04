@@ -3,6 +3,7 @@ import { PortalProvider } from '@tamagui/portal';
 import { Stack } from "expo-router";
 import { createTamagui, TamaguiProvider } from "tamagui";
 import { AuthProvider } from '../hooks/useAuth';
+import { AccountProvider } from '../hooks/useAccount';
 
 import "@/services/firebase";
 
@@ -13,11 +14,13 @@ export default function RootLayout() {
     <TamaguiProvider config={config}>
       <PortalProvider shouldAddRootHost>
         <AuthProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-            }}
-          />
+          <AccountProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+              }}
+            />
+          </AccountProvider>
         </AuthProvider>
       </PortalProvider>
     </TamaguiProvider>

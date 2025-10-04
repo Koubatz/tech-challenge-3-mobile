@@ -118,7 +118,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: "#F0F0F0", gap: 16 }}
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       <StatusBar style="dark" />
       <View
@@ -139,7 +139,6 @@ export default function HomeScreen() {
               paddingHorizontal: 16,
               paddingVertical: 12,
               marginHorizontal: -16,
-              marginTop: -80,
             }}
           >
             <View

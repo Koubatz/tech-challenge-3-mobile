@@ -16,12 +16,12 @@ import { connectFunctionsEmulator, getFunctions, httpsCallable, HttpsCallableRes
 
 // Configuração Firebase usando variáveis de ambiente
 const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.FIREBASE_API_KEY ?? "demo-api-key",
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN ?? "demo-project.firebaseapp.com",
-  projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-project",
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET ?? "demo-project.appspot.com",
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID ?? "123456789",
-  appId: process.env.FIREBASE_APP_ID ?? "1:123456789:web:demo",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? "demo-api-key",
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "demo-project.firebaseapp.com",
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? "demo-project",
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "demo-project.appspot.com",
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "123456789",
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? "1:123456789:web:demo",
 };
 
 let app: FirebaseApp | null = null;
@@ -86,6 +86,18 @@ type CreateBankAccountResponse = {
   message?: string;
 };
 
+type GetAccountDetailsPayload = {
+  accountNumber: string;
+};
+
+export type GetAccountDetailsResponse = {
+  success: boolean;
+  accountNumber: string;
+  agency: string;
+  ownerName: string;
+  balance: number;
+};
+
 export const createBankAccount = async (
   payload: CreateBankAccountPayload
 ): Promise<HttpsCallableResult<CreateBankAccountResponse>> => {
@@ -95,6 +107,22 @@ export const createBankAccount = async (
 
   const callable = httpsCallable(functions, 'createBankAccount');
   return callable(payload);
+};
+
+export const getAccountDetails = async (
+  payload: GetAccountDetailsPayload
+): Promise<GetAccountDetailsResponse> => {
+  if (!functions) {
+    throw new Error('Firebase Functions não está configurado');
+  }
+
+  const callable = httpsCallable<GetAccountDetailsPayload, GetAccountDetailsResponse>(
+    functions,
+    'getAccountDetails'
+  );
+
+  const response = await callable(payload);
+  return response.data;
 };
 
 // Funções de autenticação
