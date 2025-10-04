@@ -241,7 +241,7 @@ export default function LoginScreen() {
               <XStack alignItems="center" space={8}>
                 <Checkbox
                   checked={rememberMe}
-                  onCheckedChange={setRememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
                   size="$3"
                 />
                 <Text color="#666" fontSize={14}>

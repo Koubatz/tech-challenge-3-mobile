@@ -11,7 +11,7 @@ interface TabItemProps {
 export function TabItem({ item }: TabItemProps) {
   const { isActive, label, icon, onPress } = item;
   const activeColor = useThemeColor({}, 'tint');
-  const inactiveColor = useThemeColor({}, 'secondary');
+  const inactiveColor = useThemeColor({}, 'tabIconDefault');
 
   return (
     <TouchableOpacity
