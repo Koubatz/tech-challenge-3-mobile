@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FirebaseApp, getApp, getApps, initializeApp, type FirebaseOptions } from 'firebase/app';
+import * as firebaseAuth from 'firebase/auth';
 import {
   Auth,
   connectAuthEmulator,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   getAuth,
-  getReactNativePersistence,
   initializeAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -65,8 +65,9 @@ try {
   
   // Inicializar Auth com persistência AsyncStorage
   try {
+    const reactNativePersistence = (firebaseAuth as any).getReactNativePersistence;
     auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage)
+      persistence: reactNativePersistence(AsyncStorage),
     });
   } catch (error) {
     // Se initializeAuth falhar (já inicializado), usar getAuth
