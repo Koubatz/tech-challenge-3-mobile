@@ -12,21 +12,45 @@ import {
   signInWithEmailAndPassword,
   User
 } from 'firebase/auth';
-import { connectFunctionsEmulator, getFunctions, httpsCallable, HttpsCallableResult } from 'firebase/functions';
+import {
+  connectFunctionsEmulator,
+  getFunctions,
+  httpsCallable,
+  type Functions,
+  type HttpsCallableResult,
+} from 'firebase/functions';
+
+type FirebaseEnvKey =
+  | 'EXPO_PUBLIC_FIREBASE_API_KEY'
+  | 'EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'
+  | 'EXPO_PUBLIC_FIREBASE_PROJECT_ID'
+  | 'EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'
+  | 'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'
+  | 'EXPO_PUBLIC_FIREBASE_APP_ID';
+
+const readEnv = (key: FirebaseEnvKey): string => {
+  const value = process.env[key];
+
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`Missing Firebase environment variable: ${key}`);
+  }
+
+  return value;
+};
 
 // Configuração Firebase usando variáveis de ambiente
 const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.FIREBASE_API_KEY ?? "demo-api-key",
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN ?? "demo-project.firebaseapp.com",
-  projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-project",
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET ?? "demo-project.appspot.com",
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID ?? "123456789",
-  appId: process.env.FIREBASE_APP_ID ?? "1:123456789:web:demo",
+  apiKey: readEnv('EXPO_PUBLIC_FIREBASE_API_KEY'),
+  authDomain: readEnv('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'),
+  projectId: readEnv('EXPO_PUBLIC_FIREBASE_PROJECT_ID'),
+  storageBucket: readEnv('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: readEnv('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: readEnv('EXPO_PUBLIC_FIREBASE_APP_ID'),
 };
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
-let functions: any = null;
+let functions: Functions | null = null;
 
 // Verificar se estamos em desenvolvimento
 const isDevelopment = false;
@@ -50,13 +74,13 @@ try {
   }
   
   functions = getFunctions(app);
-  
+
   // Conectar ao emulador em desenvolvimento (silenciosamente)
-  if (isDevelopment) {
+  if (isDevelopment && auth && functions) {
     try {
       // Tentar conectar ao Auth Emulator
       connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-      
+
       // Tentar conectar ao Functions Emulator
       connectFunctionsEmulator(functions, "127.0.0.1", 5001);
       
@@ -73,7 +97,27 @@ try {
   functions = null;
 }
 
-export const healthCheck = httpsCallable(functions, 'healthCheck');
+const getFunctionsInstance = (): Functions => {
+  if (!functions) {
+    throw new Error('Firebase Functions não está configurado');
+  }
+
+  return functions;
+};
+
+type HealthCheckResponse = {
+  success: boolean;
+  docId?: string;
+  error?: string;
+};
+
+export const healthCheck = async (): Promise<HttpsCallableResult<HealthCheckResponse>> => {
+  const callable = httpsCallable<unknown, HealthCheckResponse>(
+    getFunctionsInstance(),
+    'healthCheck',
+  );
+  return callable();
+};
 
 type CreateBankAccountPayload = {
   uid: string;
@@ -89,11 +133,10 @@ type CreateBankAccountResponse = {
 export const createBankAccount = async (
   payload: CreateBankAccountPayload
 ): Promise<HttpsCallableResult<CreateBankAccountResponse>> => {
-  if (!functions) {
-    throw new Error('Firebase Functions não está configurado');
-  }
-
-  const callable = httpsCallable(functions, 'createBankAccount');
+  const callable = httpsCallable<CreateBankAccountPayload, CreateBankAccountResponse>(
+    getFunctionsInstance(),
+    'createBankAccount',
+  );
   return callable(payload);
 };
 
