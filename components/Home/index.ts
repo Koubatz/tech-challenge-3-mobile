@@ -1,0 +1,1 @@
+export { HomeTabContent } from './HomeTabContent';
