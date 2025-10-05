@@ -23,3 +23,5 @@ if (!getApps().length) {
 const functions = getFunctions(app);
 
 export const healthCheck = httpsCallable(functions, 'healthCheck');
+export { app, functions };
+
