@@ -1,15 +1,15 @@
-import React, { useState } from "react";
-import { ScrollView, Text as RNText, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useState } from "react";
+import { Text as RNText, ScrollView, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SegmentControl } from "@/components/SegmentControl";
 import {
   TransactionItem as TransactionItemComponent,
+  TransactionItemProps,
 } from "@/components/TransactionItem";
-import type { TransactionItem as Transaction } from "@/components/TransactionItem";
 
 export function HomeTabContent() {
   const [balanceVisible, setBalanceVisible] = useState(true);
@@ -17,7 +17,7 @@ export function HomeTabContent() {
 
   const toggleBalance = () => setBalanceVisible((prev) => !prev);
 
-  const transactions: Transaction[] = [
+  const transactions: TransactionItemProps[] = [
     {
       id: 1,
       title: "Restaurant",
