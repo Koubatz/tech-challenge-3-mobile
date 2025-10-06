@@ -1,5 +1,6 @@
 import { SegmentControl } from "@/components/SegmentControl";
 import { TransactionItem, TransactionItemProps } from "@/components/TransactionItem";
+import { useAuth } from "@/hooks/useAuth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -13,10 +14,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
+  const { logout } = useAuth();
   const [balanceVisible, setBalanceVisible] = React.useState(true);
   const [activeTab, setActiveTab] = React.useState<"income" | "expense">(
     "expense"
   );
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/");
+  };
 
   const toggleBalance = () => setBalanceVisible(!balanceVisible);
 
@@ -139,7 +146,7 @@ export default function HomeScreen() {
               paddingHorizontal: 16,
               paddingVertical: 12,
               marginHorizontal: -16,
-              marginTop: -80,
+              marginTop: 0,
             }}
           >
             <View
@@ -159,12 +166,47 @@ export default function HomeScreen() {
                   JS
                 </RNText>
               </View>
-              <View>
-                <RNText
-                  style={{ fontSize: 16, fontWeight: "600", color: "#101142" }}
-                >
-                  Olá, João da Silva
-                </RNText>
+              <View
+                style={{
+                  flex: 1,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View>
+                  <RNText
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "700",
+                      color: "#101142",
+                    }}
+                  >
+                    Olá, João Silva
+                  </RNText>
+                </View>
+                <View>
+                  <TouchableOpacity
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "flex-end",
+                      gap: 6,
+                    }}
+                    onPress={handleLogout}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="log-out-outline" size={20} color="#294FC1" />
+                    <RNText
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "600",
+                        color: "#294FC1",
+                      }}
+                    >
+                      Sair
+                    </RNText>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>

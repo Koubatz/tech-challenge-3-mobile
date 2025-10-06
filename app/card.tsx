@@ -1,8 +1,10 @@
 import { SegmentControl } from "@/components/SegmentControl";
 import { TransactionItem } from "@/components/TransactionItem";
 import { getExpensesByType } from "@/constants/cardExpensive";
+import { useAuth } from "@/hooks/useAuth";
 
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
@@ -29,6 +31,7 @@ interface CardItem {
 
 export default function CardsScreen() {
   const { width: screenWidth } = Dimensions.get("window");
+  const { logout } = useAuth();
   const [activeCardIndex, setActiveCardIndex] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState<"expense" | "income">(
     "expense"
@@ -36,6 +39,11 @@ export default function CardsScreen() {
 
   const translateY = React.useRef(new Animated.Value(0)).current;
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/");
+  };
 
   const maxHeight = 320;
   const minHeight = 60;
@@ -256,7 +264,7 @@ export default function CardsScreen() {
               paddingHorizontal: 16,
               paddingVertical: 12,
               marginHorizontal: -16,
-              marginTop: -80,
+              marginTop: 0,
             }}
           >
             <RNText
@@ -268,6 +276,26 @@ export default function CardsScreen() {
             >
               Cartões
             </RNText>
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              }}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#294FC1" />
+              <RNText
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: "#294FC1",
+                }}
+              >
+                Sair
+              </RNText>
+            </TouchableOpacity>
           </View>
 
           {/* Cards Carousel */}
