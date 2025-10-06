@@ -1,38 +1,78 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { useTransactions } from '@/hooks/useTransactions';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { useYearlyTransactions } from "@/hooks/useTransactions";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { PieChart } from "react-native-chart-kit";
+
+const screenWidth = Dimensions.get("window").width;
+const chartWidth = screenWidth - 120;
 
 export function Dashboard() {
-  const textColor = useThemeColor({}, 'text');
-  
-  const accountNumber = "000001-5";
-  
+  const textColor = useThemeColor({}, "text");
+  const currentYear = new Date().getFullYear();
+
   const generateLast12Months = () => {
     const months = [];
     const now = new Date();
-    
+
     for (let i = 0; i < 12; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push({
-        value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-        label: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
-        shortLabel: date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+        value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}`,
+        label: date.toLocaleDateString("pt-BR", {
+          month: "long",
+          year: "numeric",
+        }),
+        shortLabel: date.toLocaleDateString("pt-BR", {
+          month: "short",
+          year: "numeric",
+        }),
       });
     }
-    
+
     return months;
   };
 
   const [availableMonths] = useState(() => generateLast12Months());
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}`;
   });
   const [selectedBar, setSelectedBar] = useState<string | null>(null);
 
-  const { transactions, loading, error, refetch, processTransactionsForChart } = useTransactions(accountNumber);
-  const { chartData, labels } = processTransactionsForChart(selectedMonth);
+  const {
+    yearlyData,
+    loading,
+    error,
+    refetch,
+    processYearlyDataForChart,
+    processMonthlyCategoryData,
+  } = useYearlyTransactions(currentYear);
+  const { chartData, labels } = processYearlyDataForChart(selectedMonth);
+  const categoryData = processMonthlyCategoryData(selectedMonth);
+
+  const pieChartData = categoryData.map((item, index) => ({
+    name: "",
+    population: item.amount,
+    color: item.color,
+    legendFontColor: textColor,
+    legendFontSize: 12,
+  }));
 
   const barAnimations = useRef<{ [key: string]: Animated.Value }>({});
 
@@ -51,23 +91,33 @@ export function Dashboard() {
       });
 
       const timeoutId = setTimeout(() => {
+        const maxValue = Math.max(
+          ...chartData.map((data) => Math.max(data.deposits, data.withdrawals)),
+          1
+        );
+
         const animations = chartData.flatMap((data, index) => [
           Animated.timing(getBarAnimation(`${index}-deposits`), {
-            toValue: Math.max((data.deposits / 80) + 30, 35),
+            toValue:
+              data.deposits === 0
+                ? 35
+                : Math.max((data.deposits / maxValue) * 150 + 35, 35),
             duration: 1000,
             delay: index * 200,
             useNativeDriver: false,
           }),
           Animated.timing(getBarAnimation(`${index}-withdrawals`), {
-            toValue: Math.max((data.withdrawals / 80) + 30, 35),
+            toValue:
+              data.withdrawals === 0
+                ? 35
+                : Math.max((data.withdrawals / maxValue) * 150 + 35, 35),
             duration: 1000,
             delay: index * 200 + 150,
             useNativeDriver: false,
           }),
         ]);
 
-        Animated.parallel(animations).start(() => {
-        });
+        Animated.parallel(animations).start(() => {});
       }, 200);
 
       return () => clearTimeout(timeoutId);
@@ -75,58 +125,67 @@ export function Dashboard() {
   }, [chartData, selectedMonth]);
 
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   useEffect(() => {
-    const currentMonthIndex = availableMonths.findIndex(month => month.value === selectedMonth);
+    const currentMonthIndex = availableMonths.findIndex(
+      (month) => month.value === selectedMonth
+    );
     if (currentMonthIndex !== -1 && scrollViewRef.current) {
       const reversedIndex = availableMonths.length - 1 - currentMonthIndex;
       const buttonWidth = 80 + 32 + 8;
-      const scrollPosition = Math.max(0, (reversedIndex * buttonWidth) - 40);
-      
+      const scrollPosition = Math.max(0, reversedIndex * buttonWidth - 40);
+
       setTimeout(() => {
         scrollViewRef.current?.scrollTo({ x: scrollPosition, animated: true });
       }, 100);
     }
   }, []);
 
+  const dynamicPaddingLeft = (screenWidth - chartWidth) / 2 + 20;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: textColor }]}>
-          Análise mensal
-        </Text>
-        
+        <Text style={[styles.title, { color: textColor }]}>Análise mensal</Text>
+
         <View style={styles.monthSelectorContainer}>
-          <ScrollView 
+          <ScrollView
             ref={scrollViewRef}
-            horizontal 
+            horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.monthSelector}
           >
-            {availableMonths.slice().reverse().map((month) => (
-              <TouchableOpacity
-                key={month.value}
-                style={[
-                  styles.monthButton,
-                  selectedMonth === month.value && styles.monthButtonActive
-                ]}
-                onPress={() => setSelectedMonth(month.value)}
-              >
-                <Text style={[
-                  styles.monthButtonText,
-                  { color: textColor },
-                  selectedMonth === month.value && styles.monthButtonTextActive
-                ]}>
-                  {month.shortLabel}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {availableMonths
+              .slice()
+              .reverse()
+              .map((month) => (
+                <TouchableOpacity
+                  key={month.value}
+                  style={[
+                    styles.monthButton,
+                    selectedMonth === month.value && styles.monthButtonActive,
+                  ]}
+                  onPress={() => setSelectedMonth(month.value)}
+                >
+                  <Text
+                    style={[
+                      styles.monthButtonText,
+                      { color: textColor },
+                      selectedMonth === month.value &&
+                        styles.monthButtonTextActive,
+                    ]}
+                  >
+                    {month.shortLabel}
+                  </Text>
+                </TouchableOpacity>
+              ))}
           </ScrollView>
         </View>
-
       </View>
       <View style={styles.chartsContainer}>
-
         <View style={styles.card}>
           <Text style={[styles.cardTitle, { color: textColor }]}>
             Entradas e saídas
@@ -141,13 +200,10 @@ export function Dashboard() {
               </View>
             ) : error ? (
               <View style={styles.errorContainer}>
-                <Text style={[styles.errorText, { color: '#ff6b6b' }]}>
+                <Text style={[styles.errorText, { color: "#ff6b6b" }]}>
                   {error}
                 </Text>
-                <TouchableOpacity 
-                  style={styles.retryButton}
-                  onPress={refetch}
-                >
+                <TouchableOpacity style={styles.retryButton} onPress={refetch}>
                   <Text style={[styles.retryButtonText, { color: textColor }]}>
                     Tentar novamente
                   </Text>
@@ -155,7 +211,7 @@ export function Dashboard() {
               </View>
             ) : chartData.length > 0 ? (
               <View style={styles.chartWrapper}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.tempChart}
                   activeOpacity={1}
                   onPress={() => setSelectedBar(null)}
@@ -165,40 +221,45 @@ export function Dashboard() {
                       <Text style={[styles.tempLabel, { color: textColor }]}>
                         {labels[index]}
                       </Text>
-                      
+
                       <View style={styles.valuesContainer}>
                         {selectedBar === `${index}-deposits` && (
                           <View>
                             <Text style={[styles.valueDisplay]}>
-                              +R$ {data.deposits.toLocaleString('pt-BR')}
+                              +R$ {data.deposits.toLocaleString("pt-BR")}
                             </Text>
                           </View>
                         )}
                         {selectedBar === `${index}-withdrawals` && (
                           <View>
                             <Text style={[styles.valueDisplay]}>
-                              -R$ {data.withdrawals.toLocaleString('pt-BR')}
+                              -R$ {data.withdrawals.toLocaleString("pt-BR")}
                             </Text>
                           </View>
                         )}
                       </View>
-                      
+
                       <View style={styles.tempBarContainer}>
                         <TouchableOpacity
                           activeOpacity={0.8}
                           onPress={(e) => {
                             e.stopPropagation();
                             const barId = `${index}-deposits`;
-                            setSelectedBar(selectedBar === barId ? null : barId);
+                            setSelectedBar(
+                              selectedBar === barId ? null : barId
+                            );
                           }}
                         >
                           <Animated.View
                             style={[
-                              styles.tempBarItem, 
-                              { 
+                              styles.tempBarItem,
+                              {
                                 height: getBarAnimation(`${index}-deposits`),
-                                backgroundColor: selectedBar === `${index}-deposits` ? '#27a8ff' : '#5cbdff',
-                              }
+                                backgroundColor:
+                                  selectedBar === `${index}-deposits`
+                                    ? "#27a8ff"
+                                    : "#5cbdff",
+                              },
                             ]}
                           />
                         </TouchableOpacity>
@@ -207,16 +268,21 @@ export function Dashboard() {
                           onPress={(e) => {
                             e.stopPropagation();
                             const barId = `${index}-withdrawals`;
-                            setSelectedBar(selectedBar === barId ? null : barId);
+                            setSelectedBar(
+                              selectedBar === barId ? null : barId
+                            );
                           }}
                         >
                           <Animated.View
                             style={[
-                              styles.tempBarItem, 
-                              { 
+                              styles.tempBarItem,
+                              {
                                 height: getBarAnimation(`${index}-withdrawals`),
-                                backgroundColor: selectedBar === `${index}-withdrawals` ? '#ff7800' : '#f6ac6a',
-                              }
+                                backgroundColor:
+                                  selectedBar === `${index}-withdrawals`
+                                    ? "#ff7800"
+                                    : "#f6ac6a",
+                              },
                             ]}
                           />
                         </TouchableOpacity>
@@ -234,14 +300,109 @@ export function Dashboard() {
             )}
             <View style={styles.legend}>
               <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#27a8ff' }]} />
-                <Text style={[styles.legendText, { color: textColor }]}>Entrada</Text>
+                <View
+                  style={[styles.legendColor, { backgroundColor: "#27a8ff" }]}
+                />
+                <Text style={[styles.legendText, { color: textColor }]}>
+                  Entrada
+                </Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#ff7800' }]} />
-                <Text style={[styles.legendText, { color: textColor }]}>Saída</Text>
+                <View
+                  style={[styles.legendColor, { backgroundColor: "#ff7800" }]}
+                />
+                <Text style={[styles.legendText, { color: textColor }]}>
+                  Saída
+                </Text>
               </View>
             </View>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={[styles.categoryCardTitle, { color: textColor }]}>
+            Gastos por categoria
+          </Text>
+          <View style={styles.categoryContainer}>
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={textColor} />
+                <Text style={[styles.loadingText, { color: textColor }]}>
+                  Carregando categorias...
+                </Text>
+              </View>
+            ) : error ? (
+              <View style={styles.errorContainer}>
+                <Text style={[styles.errorText, { color: "#ff6b6b" }]}>
+                  {error}
+                </Text>
+                <TouchableOpacity style={styles.retryButton} onPress={refetch}>
+                  <Text style={[styles.retryButtonText, { color: textColor }]}>
+                    Tentar novamente
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : categoryData.length > 0 ? (
+              <View style={styles.categoryContent}>
+                <View style={[styles.pieChartWrapper]}>
+                  <PieChart
+                    data={pieChartData}
+                    width={chartWidth}
+                    height={180}
+                    chartConfig={{
+                      color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                    }}
+                    accessor="population"
+                    backgroundColor="transparent"
+                    paddingLeft={dynamicPaddingLeft.toString()} 
+                    center={[0, 0]}
+                    absolute
+                    hasLegend={false}
+                  />
+                </View>
+
+                <View style={styles.categoryList}>
+                  {categoryData.map((item, index) => (
+                    <View key={item.category} style={styles.categoryItem}>
+                      <View style={styles.categoryInfo}>
+                        <View
+                          style={[
+                            styles.categoryColor,
+                            { backgroundColor: item.color },
+                          ]}
+                        />
+                        <Text
+                          style={[styles.categoryName, { color: textColor }]}
+                        >
+                          {item.category}
+                        </Text>
+                      </View>
+                      <View style={styles.categoryAmountContainer}>
+                        <Text
+                          style={[styles.categoryAmount, { color: textColor }]}
+                        >
+                          R$ {item.amount.toLocaleString("pt-BR")}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.categoryPercentage,
+                            { color: textColor },
+                          ]}
+                        >
+                          {item.percentage.toFixed(1)}%
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.chartPlaceholder}>
+                <Text style={[styles.placeholderText, { color: textColor }]}>
+                  Nenhum gasto encontrado para este mês
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -259,12 +420,12 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
-    alignItems: 'center',
-    marginBottom: 30,
+    alignItems: "center",
+    marginTop: 30,
     paddingTop: 10,
   },
   monthSelectorContainer: {
-    width: '100%',
+    width: "100%",
     marginVertical: 20,
   },
   monthSelector: {
@@ -275,30 +436,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: "rgba(255, 255, 255, 0.1)",
     minWidth: 80,
-    alignItems: 'center',
+    alignItems: "center",
   },
   monthButtonActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   monthButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: "500",
+    textAlign: "center",
     opacity: 0.7,
   },
   monthButtonTextActive: {
     opacity: 1,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 8,
   },
   chartsContainer: {
@@ -306,48 +467,48 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   cardTitle: {
     fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 32,
-    textAlign: 'center',
+    fontWeight: "600",
+    marginBottom: 70,
+    textAlign: "center",
   },
   chartPlaceholder: {
     height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    borderStyle: 'dashed',
+    borderColor: "rgba(255, 255, 255, 0.05)",
+    borderStyle: "dashed",
   },
   chartContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   chartWrapper: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
-    padding: 15,
+    padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    width: '100%',
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    width: "100%",
   },
   legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 20,
     marginTop: 12,
   },
   legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   legendColor: {
@@ -357,7 +518,7 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   placeholderText: {
     fontSize: 14,
@@ -365,8 +526,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     gap: 12,
   },
   loadingText: {
@@ -375,64 +536,64 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     gap: 16,
     paddingHorizontal: 20,
   },
   errorText: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
   retryButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   retryButtonText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   tempChart: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "flex-end",
     height: 200,
     paddingHorizontal: 10,
     paddingVertical: 20,
   },
   tempBar: {
-    alignItems: 'center',
+    alignItems: "center",
     minWidth: 80,
     marginHorizontal: 8,
   },
   valuesContainer: {
     height: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 5,
   },
   valueDisplay: {
     fontSize: 12,
-    color: '#0009',
-    fontWeight: '600',
-    textAlign: 'center',
+    color: "#0009",
+    fontWeight: "600",
+    textAlign: "center",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
   },
   tempLabel: {
     fontSize: 12,
-    marginBottom: 8,
-    fontWeight: '500',
+    marginBottom: 12,
+    fontWeight: "500",
   },
   tempBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     gap: 8,
     marginBottom: 8,
   },
@@ -440,5 +601,67 @@ const styles = StyleSheet.create({
     width: 18,
     borderRadius: 3,
     minHeight: 35,
+  },
+  categoryContainer: {
+    alignItems: "center",
+  },
+  categoryContent: {
+    width: "100%",
+  },
+  pieChartWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: "auto",
+  },
+  categoryCardTitle: {
+    fontSize: 22,
+    fontWeight: "600",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  categoryList: {
+    width: "100%",
+    gap: 12,
+  },
+  categoryItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  categoryInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  categoryColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: "500",
+    flex: 1,
+  },
+  categoryAmountContainer: {
+    alignItems: "flex-end",
+  },
+  categoryAmount: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  categoryPercentage: {
+    fontSize: 12,
+    opacity: 0.7,
+    fontWeight: "500",
   },
 });

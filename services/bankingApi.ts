@@ -7,6 +7,18 @@ type Transaction = {
   amount: number;
   timestamp: string;
   newBalance: number;
+  category?: string | null;
+};
+
+type MonthlyTransactions = {
+  month: number;
+  transactions: Transaction[];
+};
+
+type YearlyTransactionsResponse = {
+  success: boolean;
+  year: number;
+  months: MonthlyTransactions[];
 };
 
 type StatementResponse = {
@@ -31,7 +43,7 @@ class BankingApiService {
 
   private async callFunction<T>(functionName: string, data: any = {}): Promise<T> {
     try {
-      const callable = httpsCallable(functions, functionName);
+      const callable = httpsCallable(functions!, functionName);
       const result = await callable(data);
       return result.data as T;
     } catch (error) {
@@ -44,12 +56,22 @@ class BankingApiService {
     return this.callFunction('healthCheck');
   }
 
-  async getAccountStatement(accountNumber: string): Promise<StatementResponse> {
-    return this.callFunction('getAccountStatement', { accountNumber });
+  async getYearlyTransactions(year: number): Promise<YearlyTransactionsResponse> {
+    return this.callFunction('getYearlyTransactions', { year });
   }
 
-  async getAccountDetails(accountNumber: string): Promise<AccountDetailsResponse> {
-    return this.callFunction('getAccountDetails', { accountNumber });
+  async getAccountStatement(accountNumber?: string): Promise<StatementResponse> {
+    if (accountNumber) {
+      return this.callFunction('getAccountStatement', { accountNumber });
+    }
+    return this.callFunction('getAccountStatement');
+  }
+
+  async getAccountDetails(accountNumber?: string): Promise<AccountDetailsResponse> {
+    if (accountNumber) {
+      return this.callFunction('getAccountDetails', { accountNumber });
+    }
+    return this.callFunction('getAccountDetails');
   }
 
   async performTransaction(
@@ -74,5 +96,9 @@ class BankingApiService {
 }
 
 export const bankingApi = new BankingApiService();
-export type { AccountDetailsResponse, StatementResponse, Transaction };
+export type {
+  AccountDetailsResponse, MonthlyTransactions, StatementResponse,
+  Transaction,
+  YearlyTransactionsResponse
+};
 
