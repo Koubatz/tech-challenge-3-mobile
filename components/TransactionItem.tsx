@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Text as RNText, View } from "react-native";
 
 export interface TransactionItemProps {
-  id: number;
+  id: string | number;
   title: string;
   amount: number;
   date: string;

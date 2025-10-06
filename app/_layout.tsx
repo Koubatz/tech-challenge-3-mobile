@@ -1,16 +1,19 @@
 import { Stack } from "expo-router";
-import { AuthProvider } from '../hooks/useAuth';
+import { AccountProvider } from "../hooks/useAccount";
+import { AuthProvider } from "../hooks/useAuth";
 
 import "@/services/firebase";
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />
+      <AccountProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        />
+      </AccountProvider>
     </AuthProvider>
-  )
+  );
 }
