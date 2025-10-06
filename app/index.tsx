@@ -2,18 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
 import {
-  Button,
-  Card,
-  Checkbox,
-  H2,
-  Input,
-  Paragraph,
+  ScrollView,
+  StyleSheet,
+  Switch,
   Text,
-  XStack,
-  YStack,
-} from "tamagui";
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
 import Toast from "../components/Toast";
 import { useAuth } from "../hooks/useAuth";
 import { validateLoginForm, validateRegisterForm } from "../utils/validation";
@@ -107,7 +104,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="#1a1a1a" paddingTop={40}>
+    <View style={styles.container}>
       <StatusBar style="light" />
       {/* Toast */}
       <Toast
@@ -118,37 +115,27 @@ export default function LoginScreen() {
       />
 
       {/* Header */}
-
-      {/* Title */}
-      <YStack paddingHorizontal={20} marginBottom={40}>
-        <H2 color="white" fontSize={28} fontWeight="600" marginBottom={4}>
+      <View style={styles.header}>
+        <Text style={styles.title}>
           Lorem Ipsum
-        </H2>
-        <Paragraph color="#aaa" fontSize={16}>
+        </Text>
+        <Text style={styles.subtitle}>
           Lorem ipsum dolor sit amet consectetur adipisicing elit.
-        </Paragraph>
-      </YStack>
+        </Text>
+      </View>
 
       {/* Card Container */}
-      <Card
-        flex={1}
-        backgroundColor="white"
-        borderTopLeftRadius={24}
-        borderTopRightRadius={24}
-        paddingTop={32}
-        paddingHorizontal={24}
-      >
+      <View style={styles.card}>
         {/* Tabs */}
-        <XStack marginBottom={32}>
+        <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tab, activeTab === "login" && styles.activeTab]}
             onPress={() => handleTabChange("login")}
           >
-            <Text
-              color={activeTab === "login" ? "#000" : "#888"}
-              fontSize={16}
-              fontWeight="600"
-            >
+            <Text style={[
+              styles.tabText,
+              { color: activeTab === "login" ? "#000" : "#888" }
+            ]}>
               Entrar
             </Text>
           </TouchableOpacity>
@@ -157,242 +144,222 @@ export default function LoginScreen() {
             style={[styles.tab, activeTab === "register" && styles.activeTab]}
             onPress={() => handleTabChange("register")}
           >
-            <Text
-              color={activeTab === "register" ? "#000" : "#888"}
-              fontSize={16}
-              fontWeight="600"
-            >
+            <Text style={[
+              styles.tabText,
+              { color: activeTab === "register" ? "#000" : "#888" }
+            ]}>
               Cadastre-se
             </Text>
           </TouchableOpacity>
-        </XStack>
+        </View>
 
-        {activeTab === "login" ? (
-          <YStack space={20}>
-            {/* Email Input */}
-            <YStack space={8}>
-              <Text color="#666" fontSize={14}>
-                E-mail
-              </Text>
-              <XStack
-                backgroundColor="#f5f5f5"
-                borderRadius={12}
-                paddingHorizontal={16}
-                paddingVertical={16}
-                alignItems="center"
-                space={12}
-              >
-                <Ionicons name="mail-outline" size={20} color="#666" />
-                <Input
-                  flex={1}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Digite seu email"
-                  backgroundColor="transparent"
-                  borderWidth={0}
-                  fontSize={16}
-                />
-              </XStack>
-            </YStack>
-
-            {/* Password Input */}
-            <YStack space={8}>
-              <Text color="#666" fontSize={14}>
-                Password
-              </Text>
-              <XStack
-                backgroundColor="#f5f5f5"
-                borderRadius={12}
-                paddingHorizontal={16}
-                paddingVertical={16}
-                alignItems="center"
-                space={12}
-              >
-                <Ionicons name="lock-closed-outline" size={20} color="#666" />
-                <Input
-                  flex={1}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Digite sua senha"
-                  secureTextEntry={!showPassword}
-                  backgroundColor="transparent"
-                  borderWidth={0}
-                  fontSize={password.length > 0 ? 24 : 16}
-                  letterSpacing={password.length > 0 ? 4 : 0}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color="#666"
+        <ScrollView style={styles.scrollView}>
+          {activeTab === "login" ? (
+            <View style={styles.form}>
+              {/* Email Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>E-mail</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="mail-outline" size={20} color="#666" />
+                  <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="Digite seu email"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
                   />
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color="#666" />
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { 
+                        fontSize: password.length > 0 ? 24 : 16,
+                        letterSpacing: password.length > 0 ? 4 : 0
+                      }
+                    ]}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Digite sua senha"
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Remember Me & Forgot Password */}
+              <View style={styles.optionsContainer}>
+                <View style={styles.rememberMeContainer}>
+                  <Switch
+                    value={rememberMe}
+                    onValueChange={setRememberMe}
+                  />
+                  <Text style={styles.rememberMeText}>
+                    Lembrar deste dispositivo
+                  </Text>
+                </View>
+
+                <TouchableOpacity>
+                  <Text style={styles.forgotPasswordText}>
+                    Esqueceu sua senha?
+                  </Text>
                 </TouchableOpacity>
-              </XStack>
-            </YStack>
+              </View>
 
-            {/* Remember Me & Forgot Password */}
-            <XStack
-              justifyContent="space-between"
-              alignItems="center"
-              marginTop={8}
-            >
-              <XStack alignItems="center" space={8}>
-                <Checkbox
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked === true)}
-                  size="$3"
-                />
-                <Text color="#666" fontSize={14}>
-                  Lembrar deste dispositivo
-                </Text>
-              </XStack>
-
-              <TouchableOpacity>
-                <Text color="#7B9CFF" fontSize={14}>
-                  Esqueceu sua senha?
+              {/* Login Button */}
+              <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={handleLogin}
+                disabled={loading}
+              >
+                <Text style={styles.buttonText}>
+                  {loading ? "Entrando..." : "Entrar"}
                 </Text>
               </TouchableOpacity>
-            </XStack>
-
-            {/* Login Button */}
-            <Button
-              backgroundColor="#000"
-              color="white"
-              fontSize={16}
-              fontWeight="600"
-              borderRadius={12}
-              marginTop={24}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? "Entrando..." : "Entrar"}
-            </Button>
-          </YStack>
-        ) : (
-          <YStack space={20}>
-            {/* Email Input */}
-            <YStack space={8}>
-              <Text color="#666" fontSize={14}>
-                E-mail
-              </Text>
-              <XStack
-                backgroundColor="#f5f5f5"
-                borderRadius={12}
-                paddingHorizontal={16}
-                paddingVertical={16}
-                alignItems="center"
-                space={12}
-              >
-                <Ionicons name="mail-outline" size={20} color="#666" />
-                <Input
-                  flex={1}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Digite seu email"
-                  backgroundColor="transparent"
-                  borderWidth={0}
-                  fontSize={16}
-                />
-              </XStack>
-            </YStack>
-
-            {/* Password Input */}
-            <YStack space={8}>
-              <Text color="#666" fontSize={14}>
-                Senha
-              </Text>
-              <XStack
-                backgroundColor="#f5f5f5"
-                borderRadius={12}
-                paddingHorizontal={16}
-                paddingVertical={16}
-                alignItems="center"
-                space={12}
-              >
-                <Ionicons name="lock-closed-outline" size={20} color="#666" />
-                <Input
-                  flex={1}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Digite sua senha"
-                  secureTextEntry={!showPassword}
-                  backgroundColor="transparent"
-                  borderWidth={0}
-                  fontSize={password.length > 0 ? 24 : 16}
-                  letterSpacing={password.length > 0 ? 4 : 0}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color="#666"
+            </View>
+          ) : (
+            <View style={styles.form}>
+              {/* Email Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>E-mail</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="mail-outline" size={20} color="#666" />
+                  <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="Digite seu email"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
                   />
-                </TouchableOpacity>
-              </XStack>
-            </YStack>
+                </View>
+              </View>
 
-            {/* Confirm Password Input */}
-            <YStack space={8}>
-              <Text color="#666" fontSize={14}>
-                Confirmar Senha
-              </Text>
-              <XStack
-                backgroundColor="#f5f5f5"
-                borderRadius={12}
-                paddingHorizontal={16}
-                paddingVertical={16}
-                alignItems="center"
-                space={12}
-              >
-                <Ionicons name="lock-closed-outline" size={20} color="#666" />
-                <Input
-                  flex={1}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Confirme sua senha"
-                  secureTextEntry={!showConfirmPassword}
-                  backgroundColor="transparent"
-                  borderWidth={0}
-                  fontSize={confirmPassword.length > 0 ? 24 : 16}
-                  letterSpacing={confirmPassword.length > 0 ? 4 : 0}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  <Ionicons
-                    name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color="#666"
+              {/* Password Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Senha</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color="#666" />
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { 
+                        fontSize: password.length > 0 ? 24 : 16,
+                        letterSpacing: password.length > 0 ? 4 : 0
+                      }
+                    ]}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Digite sua senha"
+                    secureTextEntry={!showPassword}
                   />
-                </TouchableOpacity>
-              </XStack>
-            </YStack>
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-            {/* Register Button */}
-            <Button
-              backgroundColor="#000"
-              color="white"
-              fontSize={16}
-              fontWeight="600"
-              borderRadius={12}
-              marginTop={24}
-              onPress={handleRegister}
-              disabled={loading}
-            >
-              {loading ? "Criando conta..." : "Cadastrar"}
-            </Button>
-          </YStack>
-        )}
-      </Card>
-    </YStack>
+              {/* Confirm Password Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Confirmar Senha</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color="#666" />
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { 
+                        fontSize: confirmPassword.length > 0 ? 24 : 16,
+                        letterSpacing: confirmPassword.length > 0 ? 4 : 0
+                      }
+                    ]}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    placeholder="Confirme sua senha"
+                    secureTextEntry={!showConfirmPassword}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    <Ionicons
+                      name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Register Button */}
+              <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={handleRegister}
+                disabled={loading}
+              >
+                <Text style={styles.buttonText}>
+                  {loading ? "Criando conta..." : "Cadastrar"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#1a1a1a",
+    paddingTop: 40,
+  },
+  header: {
+    paddingHorizontal: 20,
+    marginBottom: 40,
+  },
+  title: {
+    color: "white",
+    fontSize: 28,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  subtitle: {
+    color: "#aaa",
+    fontSize: 16,
+  },
+  card: {
+    flex: 1,
+    backgroundColor: "white",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 32,
+    paddingHorizontal: 24,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 32,
+  },
   tab: {
     flex: 1,
     paddingVertical: 12,
@@ -402,5 +369,69 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomColor: "#7B9CFF",
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  form: {
+    gap: 20,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  label: {
+    color: "#666",
+    fontSize: 14,
+  },
+  inputContainer: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: "center",
+    gap: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: "center",
+    gap: 8,
+  },
+  rememberMeText: {
+    color: "#666",
+    fontSize: 14,
+  },
+  forgotPasswordText: {
+    color: "#7B9CFF",
+    fontSize: 14,
+  },
+  button: {
+    backgroundColor: "#000",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 24,
+  },
+  buttonDisabled: {
+    backgroundColor: "#666",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
