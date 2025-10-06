@@ -1,119 +1,251 @@
 import { SegmentControl } from "@/components/SegmentControl";
 import { TransactionItem, TransactionItemProps } from "@/components/TransactionItem";
+import { useAccount } from "@/hooks/useAccount";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  AccountStatementEntry,
+  getAccountStatement,
+} from "@/services/firebase";
+import { formatCurrencyFromNumber } from "@/utils/currency";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
-  Text as RNText,
+  ActivityIndicator,
+  RefreshControl,
   ScrollView,
+  Text as RNText,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const TRANSACTION_ICONS: Record<"income" | "expense", keyof typeof Ionicons.glyphMap> = {
+  income: "arrow-down",
+  expense: "arrow-up",
+};
+
+const formatDate = (timestamp: string): string => {
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return "--";
+  }
+
+  const formatted = new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  }).format(date);
+
+  return formatted.replace(" de ", " ").replace(/\./g, "").trim();
+};
+
+const formatTime = (timestamp: string): string => {
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return "--";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+};
+
+const mapTransactionEntry = (
+  entry: AccountStatementEntry
+): TransactionItemProps => {
+  const type = entry.type === "DEPOSIT" ? "income" : "expense";
+  const title = type === "income" ? "Depósito recebido" : "Saque realizado";
+
+  return {
+    id: entry.id,
+    title,
+    amount: entry.amount,
+    date: formatDate(entry.timestamp),
+    time: formatTime(entry.timestamp),
+    type,
+    icon: TRANSACTION_ICONS[type],
+    category: type,
+  };
+};
+
+const extractInitials = (value?: string | null): string => {
+  if (!value) {
+    return "??";
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "??";
+  }
+
+  if (trimmed.includes("@")) {
+    const [username] = trimmed.split("@");
+    return (username ?? "??").slice(0, 2).toUpperCase() || "??";
+  }
+
+  const parts = trimmed.split(/\s+/);
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  const first = parts[0]?.[0] ?? "";
+  const last = parts[parts.length - 1]?.[0] ?? "";
+
+  return `${first}${last}`.toUpperCase() || "??";
+};
+
+const extractFirstName = (value?: string | null): string => {
+  if (!value) {
+    return "Cliente";
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "Cliente";
+  }
+
+  if (trimmed.includes("@")) {
+    const [username] = trimmed.split("@");
+    if (!username) {
+      return "Cliente";
+    }
+    return username.charAt(0).toUpperCase() + username.slice(1);
+  }
+
+  const [firstName] = trimmed.split(/\s+/);
+  if (!firstName) {
+    return "Cliente";
+  }
+
+  const normalized = firstName.toLowerCase();
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
 
 export default function HomeScreen() {
   const [balanceVisible, setBalanceVisible] = React.useState(true);
   const [activeTab, setActiveTab] = React.useState<"income" | "expense">(
     "expense"
   );
+  const [transactions, setTransactions] = React.useState<TransactionItemProps[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = React.useState(false);
+  const [transactionsError, setTransactionsError] = React.useState<string | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const isMountedRef = React.useRef(true);
 
-  const toggleBalance = () => setBalanceVisible(!balanceVisible);
+  const { account, loadingAccount, error: accountError, refreshAccount } = useAccount();
+  const { user } = useAuth();
 
-  const transactions: TransactionItemProps[] = [
-    {
-      id: 1,
-      title: "Restaurant",
-      amount: 124.2,
-      date: "Mai 5th",
-      time: "14:28:00",
-      type: "expense",
-      icon: "restaurant",
-      category: "food",
-    },
-    {
-      id: 2,
-      title: "Public Transport",
-      amount: 5.0,
-      date: "May 3th",
-      time: "22:56:00",
-      type: "expense",
-      icon: "bus",
-      category: "transport",
-    },
-    {
-      id: 3,
-      title: "Utilities",
-      amount: 213.0,
-      date: "May 2th",
-      time: "08:02:00",
-      type: "expense",
-      icon: "document-text",
-      category: "bills",
-    },
-    {
-      id: 4,
-      title: "Salary",
-      amount: 5000.0,
-      date: "May 1th",
-      time: "09:00:00",
-      type: "income",
-      icon: "card",
-      category: "salary",
-    },
-    {
-      id: 5,
-      title: "Freelance",
-      amount: 1200.0,
-      date: "Apr 30th",
-      time: "16:30:00",
-      type: "income",
-      icon: "laptop",
-      category: "work",
-    },
-    {
-      id: 6,
-      title: "Investment Return",
-      amount: 450.75,
-      date: "Apr 28th",
-      time: "12:15:00",
-      type: "income",
-      icon: "trending-up",
-      category: "investment",
-    },
-    {
-      id: 7,
-      title: "Groceries",
-      amount: 120.0,
-      date: "Apr 27th",
-      time: "10:30:00",
-      type: "expense",
-      icon: "cart",
-      category: "food",
-    },
-    {
-      id: 8,
-      title: "Entertainment",
-      amount: 120.0,
-      date: "Apr 26th",
-      time: "09:15:00",
-      type: "expense",
-      icon: "tv",
-      category: "entertainment",
-    },
-    {
-      id: 9,
-      title: "Transport",
-      amount: 120.0,
-      date: "Apr 25th",
-      time: "08:00:00",
-      type: "expense",
-      icon: "bus",
-      category: "transport",
-    },
-  ];
+  const toggleBalance = () => setBalanceVisible((visible) => !visible);
 
-  const filteredTransactions = transactions.filter((t) => t.type === activeTab);
+  const fetchTransactions = React.useCallback(
+    async ({ showLoader = true }: { showLoader?: boolean } = {}) => {
+      if (showLoader && isMountedRef.current) {
+        setLoadingTransactions(true);
+      }
+
+      if (isMountedRef.current) {
+        setTransactionsError(null);
+      }
+
+      try {
+        const response = await getAccountStatement({ page: 1, pageSize: 20 });
+
+        if (!response?.success) {
+          throw new Error("Não foi possível carregar o extrato da conta.");
+        }
+
+        const normalized = (response.transactions ?? []).map(mapTransactionEntry);
+
+        if (isMountedRef.current) {
+          setTransactions(normalized);
+        }
+      } catch (error: any) {
+        if (isMountedRef.current) {
+          setTransactionsError(
+            error?.message ?? "Erro ao carregar as transações."
+          );
+        }
+      } finally {
+        if (showLoader && isMountedRef.current) {
+          setLoadingTransactions(false);
+        }
+      }
+    },
+    []
+  );
+
+  React.useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchTransactions();
+      refreshAccount();
+    }, [fetchTransactions, refreshAccount])
+  );
+
+  const handleRefresh = React.useCallback(async () => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    setRefreshing(true);
+
+    try {
+      await Promise.allSettled([
+        refreshAccount(),
+        fetchTransactions({ showLoader: false }),
+      ]);
+    } finally {
+      if (isMountedRef.current) {
+        setRefreshing(false);
+      }
+    }
+  }, [fetchTransactions, refreshAccount]);
+
+  const initials = React.useMemo(() => {
+    return extractInitials(
+      account?.ownerName ?? user?.displayName ?? user?.email ?? undefined
+    );
+  }, [account?.ownerName, user?.displayName, user?.email]);
+
+  const greetingName = React.useMemo(() => {
+    return extractFirstName(
+      account?.ownerName ?? user?.displayName ?? user?.email ?? undefined
+    );
+  }, [account?.ownerName, user?.displayName, user?.email]);
+
+  const balanceDisplay = React.useMemo(() => {
+    if (!balanceVisible) {
+      return "••••••••";
+    }
+
+    if (loadingAccount && !account) {
+      return "Carregando...";
+    }
+
+    if (typeof account?.balance === "number") {
+      return formatCurrencyFromNumber(account.balance);
+    }
+
+    return "R$ 0,00";
+  }, [account, balanceVisible, loadingAccount]);
+
+  const filteredTransactions = React.useMemo(() => {
+    return transactions.filter((transaction) => transaction.type === activeTab);
+  }, [transactions, activeTab]);
 
   return (
     <SafeAreaView
@@ -129,7 +261,6 @@ export default function HomeScreen() {
         }}
       >
         <View style={{ padding: 16, gap: 16 }}>
-          {/* Header */}
           <View
             style={{
               flexDirection: "row",
@@ -155,20 +286,26 @@ export default function HomeScreen() {
                 }}
               >
                 <RNText style={{ color: "white", fontWeight: "bold" }}>
-                  JS
+                  {initials}
                 </RNText>
               </View>
               <View>
                 <RNText
                   style={{ fontSize: 16, fontWeight: "600", color: "#101142" }}
                 >
-                  Olá, João da Silva
+                  Olá, {greetingName}
                 </RNText>
+                {accountError ? (
+                  <RNText
+                    style={{ fontSize: 12, color: "#DC2626", marginTop: 4 }}
+                  >
+                    {accountError}
+                  </RNText>
+                ) : null}
               </View>
             </View>
           </View>
 
-          {/* Balance Card */}
           <View
             style={{
               backgroundColor: "#294FC1",
@@ -202,7 +339,7 @@ export default function HomeScreen() {
               <RNText
                 style={{ color: "white", fontSize: 32, fontWeight: "800" }}
               >
-                {balanceVisible ? "R$ 15.456.789" : "••••••••"}
+                {balanceDisplay}
               </RNText>
 
               <View
@@ -216,31 +353,30 @@ export default function HomeScreen() {
                   <RNText
                     style={{ color: "white", fontSize: 14, opacity: 0.8 }}
                   >
-                    Fatura atual
+                    Agência
                   </RNText>
                   <RNText
                     style={{ color: "white", fontSize: 16, fontWeight: "600" }}
                   >
-                    R$ 16.456.789
+                    {account?.agency ?? "--"}
                   </RNText>
                 </View>
                 <View>
                   <RNText
                     style={{ color: "white", fontSize: 14, opacity: 0.8 }}
                   >
-                    Limite disponível
+                    Conta
                   </RNText>
                   <RNText
                     style={{ color: "white", fontSize: 16, fontWeight: "600" }}
                   >
-                    R$ 2.000.000
+                    {account?.accountNumber ?? "--"}
                   </RNText>
                 </View>
               </View>
             </View>
           </View>
 
-          {/* Action Buttons */}
           <View style={{ gap: 12 }}>
             <View
               style={{
@@ -386,7 +522,6 @@ export default function HomeScreen() {
           Transações recentes
         </RNText>
 
-        {/* Segment Control */}
         <SegmentControl
           options={[
             { key: "expense", label: "Despesas" },
@@ -396,8 +531,47 @@ export default function HomeScreen() {
           onOptionChange={(key) => setActiveTab(key as "income" | "expense")}
         />
 
-        {/* Transactions List */}
-        <ScrollView>
+        {transactionsError ? (
+          <View style={{ gap: 8 }}>
+            <RNText style={{ color: "#DC2626", fontSize: 14 }}>
+              {transactionsError}
+            </RNText>
+            <TouchableOpacity
+              onPress={() => fetchTransactions()}
+              style={{ alignSelf: "flex-start" }}
+            >
+              <RNText style={{ color: "#294FC1", fontWeight: "600" }}>
+                Tentar novamente
+              </RNText>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={["#294FC1"]}
+              tintColor="#294FC1"
+            />
+          }
+        >
+          {loadingTransactions && !refreshing ? (
+            <View style={{ paddingVertical: 32 }}>
+              <ActivityIndicator size="small" color="#294FC1" />
+            </View>
+          ) : null}
+
+          {!loadingTransactions && filteredTransactions.length === 0 && !transactionsError ? (
+            <View style={{ paddingVertical: 32, alignItems: "center" }}>
+              <RNText style={{ color: "#6b7280", fontSize: 14 }}>
+                Nenhuma transação encontrada.
+              </RNText>
+            </View>
+          ) : null}
+
           {filteredTransactions.map((transaction) => (
             <TransactionItem key={transaction.id} transaction={transaction} />
           ))}

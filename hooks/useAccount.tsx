@@ -20,7 +20,7 @@ interface AccountContextValue {
   account: BankAccountDetails | null;
   loadingAccount: boolean;
   error: string | null;
-  refreshAccount: (accountNumberOverride?: string) => Promise<void>;
+  refreshAccount: () => Promise<void>;
   clearAccount: () => Promise<void>;
 }
 
@@ -78,7 +78,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     await persistAccount(null).catch(() => undefined);
   }, [persistAccount]);
 
-  const refreshAccount = useCallback(async (accountNumberOverride?: string) => {
+  const refreshAccount = useCallback(async () => {
     if (!isAuthenticated) {
       await clearAccount();
       return;
@@ -90,18 +90,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
 
     try {
-      let targetAccountNumber = accountNumberOverride ?? account?.accountNumber ?? null;
-
-      if (!targetAccountNumber) {
-        const storedAccount = await loadStoredAccount();
-        targetAccountNumber = storedAccount?.accountNumber ?? null;
-      }
-
-      if (!targetAccountNumber) {
-        throw new Error('Número da conta não encontrado. Finalize o cadastro ou entre em contato com o suporte.');
-      }
-
-      const response = await getAccountDetails({ accountNumber: targetAccountNumber });
+      const response = await getAccountDetails();
 
       if (!response?.success) {
         throw new Error('Não foi possível obter os dados da conta.');
@@ -124,7 +113,7 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
         setLoadingAccount(false);
       }
     }
-  }, [account, clearAccount, isAuthenticated, loadStoredAccount, persistAccount]);
+  }, [clearAccount, isAuthenticated, persistAccount]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -135,9 +124,9 @@ export const AccountProvider: React.FC<{ children: ReactNode }> = ({ children })
     let cancelled = false;
 
     const synchronizeAccount = async () => {
-      const storedAccount = await loadStoredAccount();
+      await loadStoredAccount();
       if (!cancelled) {
-        await refreshAccount(storedAccount?.accountNumber ?? undefined);
+        await refreshAccount();
       }
     };
 

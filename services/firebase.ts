@@ -132,7 +132,7 @@ type CreateBankAccountResponse = {
 };
 
 type GetAccountDetailsPayload = {
-  accountNumber: string;
+  accountNumber?: string;
 };
 
 export type GetAccountDetailsResponse = {
@@ -141,6 +141,38 @@ export type GetAccountDetailsResponse = {
   agency: string;
   ownerName: string;
   balance: number;
+};
+
+export type PerformTransactionPayload = {
+  amount: number;
+  type: 'DEPOSIT' | 'WITHDRAWAL';
+};
+
+export type PerformTransactionResponse = {
+  success: boolean;
+  transactionId: string;
+  newBalance: number;
+};
+
+export type GetAccountStatementPayload = {
+  page?: number;
+  pageSize?: number;
+};
+
+export type AccountStatementEntry = {
+  id: string;
+  type: 'DEPOSIT' | 'WITHDRAWAL';
+  amount: number;
+  timestamp: string;
+  newBalance: number;
+};
+
+export type GetAccountStatementResponse = {
+  success: boolean;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+  transactions: AccountStatementEntry[];
 };
 
 export const createBankAccount = async (
@@ -153,8 +185,21 @@ export const createBankAccount = async (
   return callable(payload);
 };
 
+const normalizeCallableData = <TData>(data: unknown): TData => {
+  if (!data) {
+    throw new Error('Resposta vazia recebida do Firebase Functions.');
+  }
+
+  const typedData = data as { result?: TData };
+  if (typedData && typedData.result) {
+    return typedData.result;
+  }
+
+  return data as TData;
+};
+
 export const getAccountDetails = async (
-  payload: GetAccountDetailsPayload
+  payload?: GetAccountDetailsPayload
 ): Promise<GetAccountDetailsResponse> => {
   if (!functions) {
     throw new Error('Firebase Functions não está configurado');
@@ -165,8 +210,40 @@ export const getAccountDetails = async (
     'getAccountDetails'
   );
 
+  const response = await callable(payload ?? {});
+  return normalizeCallableData<GetAccountDetailsResponse>(response.data);
+};
+
+export const performTransaction = async (
+  payload: PerformTransactionPayload
+): Promise<PerformTransactionResponse> => {
+  if (!functions) {
+    throw new Error('Firebase Functions não está configurado');
+  }
+
+  const callable = httpsCallable<PerformTransactionPayload, PerformTransactionResponse>(
+    functions,
+    'performTransaction'
+  );
+
   const response = await callable(payload);
-  return response.data;
+  return normalizeCallableData<PerformTransactionResponse>(response.data);
+};
+
+export const getAccountStatement = async (
+  payload?: GetAccountStatementPayload
+): Promise<GetAccountStatementResponse> => {
+  if (!functions) {
+    throw new Error('Firebase Functions não está configurado');
+  }
+
+  const callable = httpsCallable<GetAccountStatementPayload, GetAccountStatementResponse>(
+    functions,
+    'getAccountStatement'
+  );
+
+  const response = await callable(payload ?? {});
+  return normalizeCallableData<GetAccountStatementResponse>(response.data);
 };
 
 // Funções de autenticação
