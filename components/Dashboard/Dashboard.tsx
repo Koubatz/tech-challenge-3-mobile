@@ -1,6 +1,6 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useYearlyTransactions } from "@/hooks/useTransactions";
-import React, { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -125,7 +125,7 @@ export function Dashboard() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [chartData, selectedMonth]);
+  }, [chartData, selectedMonth, depositsHeight, withdrawalsHeight]);
 
   useEffect(() => {
     if (categoryData.length > 0) {
@@ -133,9 +133,9 @@ export function Dashboard() {
     } else {
       pieChartScale.value = 0;
     }
-  }, [categoryData, selectedMonth]);
+  }, [categoryData, selectedMonth, pieChartScale]);
 
-  const scrollViewRef = React.useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const currentMonthIndex = availableMonths.findIndex(
@@ -150,7 +150,7 @@ export function Dashboard() {
         scrollViewRef.current?.scrollTo({ x: scrollPosition, animated: true });
       }, 100);
     }
-  }, []);
+  }, [availableMonths, selectedMonth]);
 
   const dynamicPaddingLeft = (screenWidth - chartWidth) / 2 + 20;
 
