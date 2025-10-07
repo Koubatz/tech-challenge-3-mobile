@@ -20,7 +20,7 @@ const tintColorDark: ColorValue = '#fff';
 
 export const Colors: ColorScheme = {
   light: {
-    text: '#11181C',
+    text: '#101142',
     secondary: '#151718',
     background: '#fff',
     tint: tintColorLight,
@@ -29,7 +29,7 @@ export const Colors: ColorScheme = {
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: '#ECEDEE',
+    text: '#101142',
     background: '#151718',
     tint: tintColorDark,
     icon: '#9BA1A6',

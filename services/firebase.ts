@@ -443,4 +443,5 @@ export const isFirebaseAvailable = (): boolean => {
   return auth !== null;
 };
 
-export { auth };
+export { app, auth, functions };
+
