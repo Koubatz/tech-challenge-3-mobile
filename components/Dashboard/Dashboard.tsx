@@ -1,9 +1,8 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useYearlyTransactions } from "@/hooks/useTransactions";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,12 @@ import {
   View,
 } from "react-native";
 import { PieChart } from "react-native-chart-kit";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from "react-native-reanimated";
 
 const screenWidth = Dimensions.get("window").width;
 const chartWidth = screenWidth - 120;
@@ -56,7 +61,6 @@ export function Dashboard() {
   const [selectedBar, setSelectedBar] = useState<string | null>(null);
 
   const {
-    yearlyData,
     loading,
     error,
     refetch,
@@ -66,7 +70,7 @@ export function Dashboard() {
   const { chartData, labels } = processYearlyDataForChart(selectedMonth);
   const categoryData = processMonthlyCategoryData(selectedMonth);
 
-  const pieChartData = categoryData.map((item, index) => ({
+  const pieChartData = categoryData.map((item) => ({
     name: "",
     population: item.amount,
     color: item.color,
@@ -74,57 +78,64 @@ export function Dashboard() {
     legendFontSize: 12,
   }));
 
-  const barAnimations = useRef<{ [key: string]: Animated.Value }>({});
+  const depositsHeight = useSharedValue(35);
+  const withdrawalsHeight = useSharedValue(35);
+  const pieChartScale = useSharedValue(0);
 
-  const getBarAnimation = (key: string) => {
-    if (!barAnimations.current[key]) {
-      barAnimations.current[key] = new Animated.Value(35);
-    }
-    return barAnimations.current[key];
-  };
+  const depositsBarStyle = useAnimatedStyle(() => {
+    return {
+      height: depositsHeight.value,
+    };
+  });
+
+  const withdrawalsBarStyle = useAnimatedStyle(() => {
+    return {
+      height: withdrawalsHeight.value,
+    };
+  });
+
+  const pieChartAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: pieChartScale.value }],
+      opacity: pieChartScale.value,
+    };
+  });
 
   useEffect(() => {
     if (chartData.length > 0) {
-      chartData.forEach((_, index) => {
-        getBarAnimation(`${index}-deposits`);
-        getBarAnimation(`${index}-withdrawals`);
-      });
-
       const timeoutId = setTimeout(() => {
         const maxValue = Math.max(
           ...chartData.map((data) => Math.max(data.deposits, data.withdrawals)),
           1
         );
 
-        const animations = chartData.flatMap((data, index) => [
-          Animated.timing(getBarAnimation(`${index}-deposits`), {
-            toValue:
-              data.deposits === 0
-                ? 35
-                : Math.max((data.deposits / maxValue) * 150 + 35, 35),
-            duration: 1000,
-            delay: index * 200,
-            useNativeDriver: false,
-          }),
-          Animated.timing(getBarAnimation(`${index}-withdrawals`), {
-            toValue:
-              data.withdrawals === 0
-                ? 35
-                : Math.max((data.withdrawals / maxValue) * 150 + 35, 35),
-            duration: 1000,
-            delay: index * 200 + 150,
-            useNativeDriver: false,
-          }),
-        ]);
+        const data = chartData[0];
+        
+        const newDepositsHeight = data.deposits === 0
+          ? 35
+          : Math.max((data.deposits / maxValue) * 150 + 35, 35);
+        
+        const newWithdrawalsHeight = data.withdrawals === 0
+          ? 35
+          : Math.max((data.withdrawals / maxValue) * 150 + 35, 35);
 
-        Animated.parallel(animations).start(() => {});
+        depositsHeight.value = withDelay(200, withTiming(newDepositsHeight, { duration: 1000 }));
+        withdrawalsHeight.value = withDelay(350, withTiming(newWithdrawalsHeight, { duration: 1000 }));
       }, 200);
 
       return () => clearTimeout(timeoutId);
     }
   }, [chartData, selectedMonth]);
 
-  const scrollViewRef = useRef<ScrollView>(null);
+  useEffect(() => {
+    if (categoryData.length > 0) {
+      pieChartScale.value = withDelay(500, withTiming(1, { duration: 800 }));
+    } else {
+      pieChartScale.value = 0;
+    }
+  }, [categoryData, selectedMonth]);
+
+  const scrollViewRef = React.useRef<ScrollView>(null);
 
   useEffect(() => {
     const currentMonthIndex = availableMonths.findIndex(
@@ -142,6 +153,7 @@ export function Dashboard() {
   }, []);
 
   const dynamicPaddingLeft = (screenWidth - chartWidth) / 2 + 20;
+
 
   return (
     <ScrollView
@@ -253,12 +265,11 @@ export function Dashboard() {
                           <Animated.View
                             style={[
                               styles.tempBarItem,
+                              depositsBarStyle,
                               {
-                                height: getBarAnimation(`${index}-deposits`),
-                                backgroundColor:
-                                  selectedBar === `${index}-deposits`
-                                    ? "#27a8ff"
-                                    : "#5cbdff",
+                                backgroundColor: selectedBar === `${index}-deposits`
+                                  ? "#27a8ff"
+                                  : "#5cbdff"
                               },
                             ]}
                           />
@@ -276,12 +287,11 @@ export function Dashboard() {
                           <Animated.View
                             style={[
                               styles.tempBarItem,
+                              withdrawalsBarStyle,
                               {
-                                height: getBarAnimation(`${index}-withdrawals`),
-                                backgroundColor:
-                                  selectedBar === `${index}-withdrawals`
-                                    ? "#ff7800"
-                                    : "#f6ac6a",
+                                backgroundColor: selectedBar === `${index}-withdrawals`
+                                  ? "#ff7800"
+                                  : "#f6ac6a"
                               },
                             ]}
                           />
@@ -344,7 +354,7 @@ export function Dashboard() {
               </View>
             ) : categoryData.length > 0 ? (
               <View style={styles.categoryContent}>
-                <View style={[styles.pieChartWrapper]}>
+                <Animated.View style={[styles.pieChartWrapper, pieChartAnimatedStyle]}>
                   <PieChart
                     data={pieChartData}
                     width={chartWidth}
@@ -359,10 +369,10 @@ export function Dashboard() {
                     absolute
                     hasLegend={false}
                   />
-                </View>
+                </Animated.View>
 
                 <View style={styles.categoryList}>
-                  {categoryData.map((item, index) => (
+                  {categoryData.map((item) => (
                     <View key={item.category} style={styles.categoryItem}>
                       <View style={styles.categoryInfo}>
                         <View
@@ -421,7 +431,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginTop: 30,
+    marginBottom: 30,
     paddingTop: 10,
   },
   monthSelectorContainer: {
