@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { Animated } from 'react-native';
-import { Text, XStack } from 'tamagui';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 
 interface ToastProps {
   visible: boolean;
@@ -108,18 +107,11 @@ export default function Toast({
         opacity,
       }}
     >
-      <XStack
-        backgroundColor={config.backgroundColor}
-        borderRadius={12}
-        paddingHorizontal={16}
-        paddingVertical={12}
-        alignItems="center"
-        space={12}
-        shadowColor="#000"
-        shadowOffset={{ width: 0, height: 2 }}
-        shadowOpacity={0.25}
-        shadowRadius={4}
-        elevation={5}
+      <View
+        style={[
+          styles.toastContainer,
+          { backgroundColor: config.backgroundColor }
+        ]}
       >
         <Ionicons 
           name={config.icon} 
@@ -127,14 +119,35 @@ export default function Toast({
           color={config.iconColor} 
         />
         <Text 
-          color={config.iconColor} 
-          fontSize={16} 
-          fontWeight="500"
-          flex={1}
+          style={[
+            styles.toastText,
+            { color: config.iconColor }
+          ]}
         >
           {message}
         </Text>
-      </XStack>
+      </View>
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  toastContainer: {
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  toastText: {
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+    marginLeft: 12,
+  },
+});

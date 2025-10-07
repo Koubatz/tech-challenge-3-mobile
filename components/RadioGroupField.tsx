@@ -1,4 +1,5 @@
-import { Label, RadioGroup, XStack, type SizeTokens } from 'tamagui';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type RadioItem = {
   value: string;
@@ -11,13 +12,13 @@ type RadioGroupDemoProps = {
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   name?: string;
-  size?: SizeTokens;
 }
 
 type RadioGroupItemWithLabelProps = {
-  size: SizeTokens;
   value: string;
   label: string;
+  isSelected: boolean;
+  onPress: () => void;
 };
 
 export function RadioGroupField({
@@ -25,41 +26,74 @@ export function RadioGroupField({
   value,
   defaultValue,
   onValueChange,
-  name = 'form',
-  size = '$4'
+  name = 'form'
 }: RadioGroupDemoProps) {
-  return (
-    <RadioGroup
-      value={value}
-      defaultValue={defaultValue}
-      onValueChange={onValueChange}
-      name={name}
-    >
-      <XStack gap="$4">
-        {items.map((item) => (
-          <RadioGroupItemWithLabel
-            key={item.value}
-            size={size}
-            value={item.value}
-            label={item.label}
-          />
-        ))}
-      </XStack>
-    </RadioGroup>
-  )
-}
+  const currentValue = value || defaultValue;
 
-export function RadioGroupItemWithLabel({ size, value, label }: RadioGroupItemWithLabelProps) {
-  const id = `radiogroup-${value}`;
+  const handlePress = (itemValue: string) => {
+    if (onValueChange) {
+      onValueChange(itemValue);
+    }
+  };
 
   return (
-    <XStack alignItems="center" gap="$2">
-      <RadioGroup.Item value={value} id={id} size={size}>
-        <RadioGroup.Indicator />
-      </RadioGroup.Item>
-      <Label size={size} htmlFor={id}>
-        {label}
-      </Label>
-    </XStack>
-  )
+    <View style={styles.container}>
+      {items.map((item) => (
+        <RadioGroupItemWithLabel
+          key={item.value}
+          value={item.value}
+          label={item.label}
+          isSelected={currentValue === item.value}
+          onPress={() => handlePress(item.value)}
+        />
+      ))}
+    </View>
+  );
 }
+
+export function RadioGroupItemWithLabel({ 
+  value, 
+  label, 
+  isSelected, 
+  onPress 
+}: RadioGroupItemWithLabelProps) {
+  return (
+    <TouchableOpacity style={styles.radioItem} onPress={onPress}>
+      <View style={styles.radioButton}>
+        {isSelected && <View style={styles.radioButtonSelected} />}
+      </View>
+      <Text style={styles.radioLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  radioItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioButtonSelected: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#007AFF',
+  },
+  radioLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
+});

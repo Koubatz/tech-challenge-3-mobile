@@ -1,6 +1,7 @@
 import { BottomTabNavigator } from "@/components/BottomTabNavigator";
 import React from "react";
 
+
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = React.useState("home");
 
@@ -30,3 +31,4 @@ export default function HomeScreen() {
     />
   );
 }
+

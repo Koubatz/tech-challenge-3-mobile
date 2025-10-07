@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from 'firebase/auth';
 import React, { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
 
+import { ACCOUNT_DETAILS_STORAGE_KEY } from '../constants/storageKeys';
 import { createBankAccount, getCurrentUser, isFirebaseAvailable, onAuthStateChange, signIn, signOut, signUp } from '../services/firebase';
 
 interface AuthContextType {
@@ -141,14 +142,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ownerName: userCredential.user.email,
         });
 
-        const callableData = callableResult.data as { success?: boolean; message?: string } | undefined;
+        const callableData = callableResult.data as {
+          success?: boolean;
+          message?: string;
+          accountNumber?: string;
+          agency?: string;
+          ownerName?: string;
+          balance?: number;
+        } | undefined;
         if (callableData && callableData.success === false) {
           throw new Error(callableData.message ?? 'Não foi possível criar a conta bancária.');
+        }
+
+        if (callableData?.accountNumber) {
+          const fallbackOwnerName = callableData.ownerName ?? userCredential.user.email ?? '';
+          const initialAccountDetails = {
+            accountNumber: callableData.accountNumber,
+            agency: callableData.agency ?? '0001',
+            ownerName: fallbackOwnerName,
+            balance: callableData.balance ?? 0,
+          };
+
+          await AsyncStorage.setItem(
+            ACCOUNT_DETAILS_STORAGE_KEY,
+            JSON.stringify(initialAccountDetails)
+          );
         }
       } catch (bankAccountError: any) {
         console.error('Erro ao criar conta bancária:', bankAccountError);
 
         await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem(ACCOUNT_DETAILS_STORAGE_KEY).catch(() => undefined);
 
         if (firebaseConfiguredRef.current) {
           try {
@@ -210,6 +234,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setUser(null);
       await AsyncStorage.removeItem('userToken');
+      await AsyncStorage.removeItem(ACCOUNT_DETAILS_STORAGE_KEY).catch(() => undefined);
     } catch (error) {
       console.error('Erro no logout:', error);
     }

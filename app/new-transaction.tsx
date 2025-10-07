@@ -1,8 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
-import { Button, Form, Input, Text, YStack } from 'tamagui';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { RadioGroupField } from '@/components/RadioGroupField';
 import type { TransactionLabel, TransactionType } from '@/types/transactions';
@@ -80,51 +79,110 @@ export default function NewTransaction() {
           title: 'Nova transação',
         }}
       />
-      <YStack padding="$4" gap="$4">
-        <Form onSubmit={handleSubmit}>
-          <YStack gap="$4">
-            <Text>Tipo</Text>
-            <RadioGroupField
-              items={transactionTypeOptions}
-              value={transactionType}
-              onValueChange={handleTransactionTypeChange}
-            />
-            <Text>Valor</Text>
-            <Input
-              placeholder="R$ 0,00"
-              value={displayValue}
-              onChangeText={handleAmountChange}
-              keyboardType="numeric"
-            />
-            <Text>Anexo</Text>
-            {attachment && !attachment.canceled ? (
-              <YStack gap="$2">
-                <Text fontSize="$3">
-                  {attachment.assets[0].name}
-                </Text>
-                <Button 
-                  variant="outlined" 
-                  onPress={handleRemoveAttachment}
-                >
-                  Remover anexo
-                </Button>
-              </YStack>
-            ) : (
-              <Button 
-                variant="outlined" 
-                onPress={handlePickDocument}
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.label}>Tipo</Text>
+          <RadioGroupField
+            items={transactionTypeOptions}
+            value={transactionType}
+            onValueChange={handleTransactionTypeChange}
+          />
+          
+          <Text style={styles.label}>Valor</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="R$ 0,00"
+            value={displayValue}
+            onChangeText={handleAmountChange}
+            keyboardType="numeric"
+          />
+          
+          <Text style={styles.label}>Anexo</Text>
+          {attachment && !attachment.canceled ? (
+            <View style={styles.attachmentContainer}>
+              <Text style={styles.attachmentText}>
+                {attachment.assets[0].name}
+              </Text>
+              <TouchableOpacity 
+                style={styles.buttonOutlined} 
+                onPress={handleRemoveAttachment}
               >
-                Selecionar arquivo
-              </Button>
-            )}
-            <Form.Trigger asChild>
-              <Button themeInverse>
-                Criar transação
-              </Button>
-            </Form.Trigger>
-          </YStack>
-        </Form>
-      </YStack>
+                <Text style={styles.buttonOutlinedText}>Remover anexo</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity 
+              style={styles.buttonOutlined} 
+              onPress={handlePickDocument}
+            >
+              <Text style={styles.buttonOutlinedText}>Selecionar arquivo</Text>
+            </TouchableOpacity>
+          )}
+          
+          <TouchableOpacity 
+            style={styles.buttonPrimary} 
+            onPress={handleSubmit}
+          >
+            <Text style={styles.buttonPrimaryText}>Criar transação</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  content: {
+    padding: 16,
+    gap: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
+  },
+  attachmentContainer: {
+    gap: 8,
+  },
+  attachmentText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  buttonOutlined: {
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  buttonOutlinedText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonPrimary: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  buttonPrimaryText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
