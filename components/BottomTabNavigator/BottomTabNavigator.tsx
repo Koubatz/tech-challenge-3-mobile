@@ -1,10 +1,10 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { Link } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { HomeTabContent } from "@/components/Home";
 import { Dashboard } from '../Dashboard';
+import { StatementTabContent } from "./StatementTabContent";
 import { TabBar } from "./TabBar";
 import type { BottomTabNavigatorProps, TabItem } from "./types";
 
@@ -27,19 +27,7 @@ export function BottomTabNavigator({
         return <HomeTabContent />;
 
       case "statement":
-        return (
-          <View style={styles.content}>
-            <ContentPlaceholder
-              title="Extrato"
-              description="Extrato de transações"
-            />
-            <Link href="/new-transaction" asChild>
-              <TouchableOpacity style={styles.button}>
-                <Text style={styles.buttonText}>Nova transação</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
-        );
+        return <StatementTabContent />;
       case 'dashboard':
         return <Dashboard />;
       default:
@@ -110,18 +98,5 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     opacity: 0.8,
     marginBottom: 20,
-  },
-  button: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
   },
 });
