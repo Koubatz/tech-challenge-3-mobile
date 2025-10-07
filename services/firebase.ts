@@ -171,12 +171,13 @@ export type PerformTransactionResponse = {
   newBalance: number;
 };
 
+export type AccountStatementEntryType = 'DEPOSIT' | 'WITHDRAWAL' | 'CARD';
+
 export type GetAccountStatementPayload = {
   page?: number;
   pageSize?: number;
+  transactionType?: AccountStatementEntryType;
 };
-
-export type AccountStatementEntryType = 'DEPOSIT' | 'WITHDRAWAL' | 'CARD';
 
 export type AccountStatementEntry = {
   id: string;
@@ -444,4 +445,3 @@ export const isFirebaseAvailable = (): boolean => {
 };
 
 export { app, auth, functions };
-

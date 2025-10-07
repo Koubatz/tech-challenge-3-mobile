@@ -62,11 +62,16 @@ class BankingApiService {
     return this.callFunction('getYearlyTransactions', { year });
   }
 
-  async getAccountStatement(accountNumber?: string): Promise<StatementResponse> {
-    if (accountNumber) {
-      return this.callFunction('getAccountStatement', { accountNumber });
+  async getAccountStatement(
+    transactionType?: TransactionType
+  ): Promise<StatementResponse> {
+    const payload: Record<string, unknown> = {};
+
+    if (transactionType) {
+      payload.transactionType = transactionType;
     }
-    return this.callFunction('getAccountStatement');
+
+    return this.callFunction('getAccountStatement', payload);
   }
 
   async getAccountDetails(accountNumber?: string): Promise<AccountDetailsResponse> {
@@ -103,4 +108,3 @@ export type {
   Transaction,
   YearlyTransactionsResponse
 };
-

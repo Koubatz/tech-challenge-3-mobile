@@ -2,19 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { Text as RNText, ScrollView, TouchableOpacity, View } from "react-native";
+import { Text as RNText, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { SegmentControl } from "@/components/SegmentControl";
-import {
-  TransactionItem as TransactionItemComponent,
-  TransactionItemProps,
-} from "@/components/TransactionItem";
+import { RecentTransactions } from "@/components/Home/RecentTransactions";
 import { useAuth } from "@/hooks/useAuth";
 
 export function HomeTabContent() {
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
   const { logout } = useAuth();
 
   const toggleBalance = () => setBalanceVisible((prev) => !prev);
@@ -23,101 +18,6 @@ export function HomeTabContent() {
     await logout();
     router.replace("/");
   }, [logout]);
-
-  const transactions: TransactionItemProps[] = [
-    {
-      id: 1,
-      title: "Restaurant",
-      amount: 124.2,
-      date: "Mai 5th",
-      time: "14:28:00",
-      type: "expense",
-      icon: "restaurant",
-      category: "food",
-    },
-    {
-      id: 2,
-      title: "Public Transport",
-      amount: 5.0,
-      date: "May 3th",
-      time: "22:56:00",
-      type: "expense",
-      icon: "bus",
-      category: "transport",
-    },
-    {
-      id: 3,
-      title: "Utilities",
-      amount: 213.0,
-      date: "May 2th",
-      time: "08:02:00",
-      type: "expense",
-      icon: "document-text",
-      category: "bills",
-    },
-    {
-      id: 4,
-      title: "Salary",
-      amount: 5000.0,
-      date: "May 1th",
-      time: "09:00:00",
-      type: "income",
-      icon: "card",
-      category: "salary",
-    },
-    {
-      id: 5,
-      title: "Freelance",
-      amount: 1200.0,
-      date: "Apr 30th",
-      time: "16:30:00",
-      type: "income",
-      icon: "laptop",
-      category: "work",
-    },
-    {
-      id: 6,
-      title: "Investment Return",
-      amount: 450.75,
-      date: "Apr 28th",
-      time: "12:15:00",
-      type: "income",
-      icon: "trending-up",
-      category: "investment",
-    },
-    {
-      id: 7,
-      title: "Groceries",
-      amount: 120.0,
-      date: "Apr 27th",
-      time: "10:30:00",
-      type: "expense",
-      icon: "cart",
-      category: "food",
-    },
-    {
-      id: 8,
-      title: "Entertainment",
-      amount: 120.0,
-      date: "Apr 26th",
-      time: "09:15:00",
-      type: "expense",
-      icon: "tv",
-      category: "entertainment",
-    },
-    {
-      id: 9,
-      title: "Transport",
-      amount: 120.0,
-      date: "Apr 25th",
-      time: "08:00:00",
-      type: "expense",
-      icon: "bus",
-      category: "transport",
-    },
-  ];
-
-  const filteredTransactions = transactions.filter((transaction) => transaction.type === activeTab);
 
   return (
     <SafeAreaView
@@ -383,49 +283,7 @@ export function HomeTabContent() {
           </View>
         </View>
       </View>
-      <View
-        style={{
-          gap: 16,
-          backgroundColor: "#fff",
-          paddingHorizontal: 16,
-          paddingVertical: 24,
-          paddingBottom: 50,
-          borderRadius: 28,
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          height: 430,
-          maxHeight: 430,
-          marginBottom: -40,
-        }}
-      >
-        <RNText
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-            color: "#101142",
-          }}
-        >
-          Transações recentes
-        </RNText>
-
-        <SegmentControl
-          options={[
-            { key: "expense", label: "Despesas" },
-            { key: "income", label: "Entradas" },
-          ]}
-          activeKey={activeTab}
-          onOptionChange={(key) => setActiveTab(key as "income" | "expense")}
-        />
-
-        <ScrollView>
-          {filteredTransactions.map((transaction) => (
-            <TransactionItemComponent
-              key={transaction.id}
-              transaction={transaction}
-            />
-          ))}
-        </ScrollView>
-      </View>
+      <RecentTransactions />
     </SafeAreaView>
   );
 }
