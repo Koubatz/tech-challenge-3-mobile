@@ -3,6 +3,28 @@ export interface ValidationResult {
   message?: string;
 }
 
+export const validateName = (name: string): ValidationResult => {
+  if (!name) {
+    return { isValid: false, message: 'Nome é obrigatório' };
+  }
+
+  const trimmed = name.trim();
+
+  if (!trimmed) {
+    return { isValid: false, message: 'Nome não pode estar vazio' };
+  }
+
+  if (trimmed.length < 2) {
+    return { isValid: false, message: 'Nome deve ter pelo menos 2 caracteres' };
+  }
+
+  if (trimmed.length > 80) {
+    return { isValid: false, message: 'Nome muito longo (máximo 80 caracteres)' };
+  }
+
+  return { isValid: true };
+};
+
 export const validateEmail = (email: string): ValidationResult => {
   if (!email) {
     return { isValid: false, message: 'Email é obrigatório' };
@@ -68,10 +90,16 @@ export const validateLoginForm = (email: string, password: string): ValidationRe
 };
 
 export const validateRegisterForm = (
-  email: string, 
-  password: string, 
+  name: string,
+  email: string,
+  password: string,
   confirmPassword: string
 ): ValidationResult => {
+  const nameValidation = validateName(name);
+  if (!nameValidation.isValid) {
+    return nameValidation;
+  }
+
   const emailValidation = validateEmail(email);
   if (!emailValidation.isValid) {
     return emailValidation;

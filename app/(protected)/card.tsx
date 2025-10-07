@@ -2,6 +2,7 @@ import {
   TransactionItem,
   type TransactionItemProps,
 } from "@/components/TransactionItem";
+import { ROUTE_AUTH_LOGIN } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
 import { useCards } from "@/hooks/useCards";
 import {
@@ -22,9 +23,9 @@ import {
   Animated,
   Dimensions,
   PanResponder,
+  Text as RNText,
   RefreshControl,
   ScrollView,
-  Text as RNText,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -271,6 +272,11 @@ export default function CardsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards.length]);
 
+  const handleLogout = async () => {
+    await logout();
+    router.replace(ROUTE_AUTH_LOGIN);
+  };
+
   const displayCards = React.useMemo(() => {
     return cards.map(mapCardToDisplay);
   }, [cards]);
@@ -461,11 +467,6 @@ export default function CardsScreen() {
       ]
     );
   }, [activeCardIndex, cards, handleDeleteCardInternal]);
-
-  const handleLogout = React.useCallback(async () => {
-    await logout();
-    router.replace("/");
-  }, [logout]);
 
   const panResponder = React.useMemo(
     () =>

@@ -1,10 +1,10 @@
-import { Redirect } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
+import { ROUTE_PROTECTED_HOME } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
-import { ROUTE_AUTH_LOGIN, ROUTE_PROTECTED_HOME } from "@/constants/routes";
 
-export default function Index() {
+export default function AuthLayout() {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -22,9 +22,9 @@ export default function Index() {
     );
   }
 
-  return (
-    <Redirect
-      href={isAuthenticated ? ROUTE_PROTECTED_HOME : ROUTE_AUTH_LOGIN}
-    />
-  );
+  if (isAuthenticated) {
+    return <Redirect href={ROUTE_PROTECTED_HOME} />;
+  }
+
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
