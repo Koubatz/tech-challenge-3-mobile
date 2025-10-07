@@ -52,8 +52,23 @@ let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let functions: Functions | null = null;
 
-// Verificar se estamos em desenvolvimento
-const isDevelopment = false;
+const parsePort = (value: string | undefined, fallback: number): number => {
+  const parsed = Number.parseInt(value ?? '', 10);
+  if (Number.isFinite(parsed)) {
+    return parsed;
+  }
+  return fallback;
+};
+
+const isDevelopment =
+  process.env.EXPO_PUBLIC_FIREBASE_USE_EMULATOR === 'true' ||
+  process.env.EXPO_PUBLIC_FIREBASE_USE_EMULATOR === '1';
+
+const functionsEmulatorHost = process.env.EXPO_PUBLIC_FIREBASE_FUNCTIONS_HOST ?? '127.0.0.1';
+const functionsEmulatorPort = parsePort(process.env.EXPO_PUBLIC_FIREBASE_FUNCTIONS_PORT, 5001);
+
+const authEmulatorHost = process.env.EXPO_PUBLIC_FIREBASE_AUTH_HOST ?? '127.0.0.1';
+const authEmulatorPort = parsePort(process.env.EXPO_PUBLIC_FIREBASE_AUTH_PORT, 9099);
 
 // Inicializar Firebase
 try {
@@ -80,10 +95,12 @@ try {
   if (isDevelopment && auth && functions) {
     try {
       // Tentar conectar ao Auth Emulator
-      connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+      connectAuthEmulator(auth, `http://${authEmulatorHost}:${authEmulatorPort}`, {
+        disableWarnings: true,
+      });
 
       // Tentar conectar ao Functions Emulator
-      connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+      connectFunctionsEmulator(functions, functionsEmulatorHost, functionsEmulatorPort);
       
       // Emulador conectado com sucesso (modo silencioso)
     } catch (emulatorError) {
@@ -159,9 +176,11 @@ export type GetAccountStatementPayload = {
   pageSize?: number;
 };
 
+export type AccountStatementEntryType = 'DEPOSIT' | 'WITHDRAWAL' | 'CARD';
+
 export type AccountStatementEntry = {
   id: string;
-  type: 'DEPOSIT' | 'WITHDRAWAL';
+  type: AccountStatementEntryType;
   amount: number;
   timestamp: string;
   newBalance: number;
@@ -173,6 +192,81 @@ export type GetAccountStatementResponse = {
   pageSize: number;
   hasMore: boolean;
   transactions: AccountStatementEntry[];
+};
+
+export type PaymentCardType = 'CREDIT' | 'DEBIT' | 'PHYSICAL' | 'VIRTUAL';
+
+export type PaymentCard = {
+  id: string;
+  cardType: PaymentCardType;
+  brand?: string | null;
+  label?: string | null;
+  maskedNumber?: string | null;
+  lastFourDigits?: string | null;
+  cardNumber?: string | null;
+  accountId?: string | null;
+  accountNumber?: string | null;
+  invoiceAmount?: number | null;
+  invoiceDueDate?: string | null;
+  availableLimit?: number | null;
+  creditLimit?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+export type ListPaymentCardsResponse = {
+  success: boolean;
+  cards: PaymentCard[];
+};
+
+export type CreatePaymentCardPayload = {
+  type: PaymentCardType;
+  label?: string;
+  brand?: string;
+};
+
+export type CreatePaymentCardResponse = {
+  success: boolean;
+  card: PaymentCard;
+  message?: string;
+};
+
+export type PaymentCardTransactionType =
+  | 'DEBIT'
+  | 'CREDIT'
+  | 'PURCHASE'
+  | 'PAYMENT'
+  | 'REFUND'
+  | 'ADJUSTMENT'
+  | 'CARD';
+
+export type PaymentCardTransaction = {
+  id: string;
+  type: PaymentCardTransactionType;
+  direction?: 'DEBIT' | 'CREDIT';
+  description?: string | null;
+  amount: number;
+  timestamp: string;
+  category?: string | null;
+};
+
+export type GetPaymentCardTransactionsPayload = {
+  cardId: string;
+  limit?: number;
+};
+
+export type GetPaymentCardTransactionsResponse = {
+  success: boolean;
+  transactions: PaymentCardTransaction[];
+};
+
+export type DeletePaymentCardPayload = {
+  cardId: string;
+};
+
+export type DeletePaymentCardResponse = {
+  success: boolean;
+  removedTransactions?: number;
 };
 
 export const createBankAccount = async (
@@ -244,6 +338,68 @@ export const getAccountStatement = async (
 
   const response = await callable(payload ?? {});
   return normalizeCallableData<GetAccountStatementResponse>(response.data);
+};
+
+export const listPaymentCards = async (): Promise<ListPaymentCardsResponse> => {
+  if (!functions) {
+    throw new Error('Firebase Functions não está configurado');
+  }
+
+  const callable = httpsCallable<Record<string, never>, ListPaymentCardsResponse>(
+    functions,
+    'listPaymentCards'
+  );
+
+  const response = await callable({} as Record<string, never>);
+  return normalizeCallableData<ListPaymentCardsResponse>(response.data);
+};
+
+export const createPaymentCard = async (
+  payload: CreatePaymentCardPayload
+): Promise<CreatePaymentCardResponse> => {
+  if (!functions) {
+    throw new Error('Firebase Functions não está configurado');
+  }
+
+  const callable = httpsCallable<CreatePaymentCardPayload, CreatePaymentCardResponse>(
+    functions,
+    'createPaymentCard'
+  );
+
+  const response = await callable(payload);
+  return normalizeCallableData<CreatePaymentCardResponse>(response.data);
+};
+
+export const getPaymentCardTransactions = async (
+  payload: GetPaymentCardTransactionsPayload
+): Promise<GetPaymentCardTransactionsResponse> => {
+  if (!functions) {
+    throw new Error('Firebase Functions não está configurado');
+  }
+
+  const callable = httpsCallable<
+    GetPaymentCardTransactionsPayload,
+    GetPaymentCardTransactionsResponse
+  >(functions, 'getPaymentCardTransactions');
+
+  const response = await callable(payload);
+  return normalizeCallableData<GetPaymentCardTransactionsResponse>(response.data);
+};
+
+export const deletePaymentCard = async (
+  payload: DeletePaymentCardPayload
+): Promise<DeletePaymentCardResponse> => {
+  if (!functions) {
+    throw new Error('Firebase Functions não está configurado');
+  }
+
+  const callable = httpsCallable<DeletePaymentCardPayload, DeletePaymentCardResponse>(
+    functions,
+    'deletePaymentCard'
+  );
+
+  const response = await callable(payload);
+  return normalizeCallableData<DeletePaymentCardResponse>(response.data);
 };
 
 // Funções de autenticação

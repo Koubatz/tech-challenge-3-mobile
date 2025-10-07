@@ -66,8 +66,32 @@ const formatTime = (timestamp: string): string => {
 const mapTransactionEntry = (
   entry: AccountStatementEntry
 ): TransactionItemProps => {
-  const type = entry.type === "DEPOSIT" ? "income" : "expense";
-  const title = type === "income" ? "Depósito recebido" : "Saque realizado";
+  let type: "income" | "expense" = "expense";
+  let title = "Saque realizado";
+  let category = "expense";
+
+  switch (entry.type) {
+    case "DEPOSIT":
+      type = "income";
+      title = "Depósito recebido";
+      category = "income";
+      break;
+    case "WITHDRAWAL":
+      type = "expense";
+      title = "Saque realizado";
+      category = "expense";
+      break;
+    case "CARD":
+      type = "expense";
+      title = "Compra no cartão";
+      category = "card";
+      break;
+    default:
+      type = entry.amount >= 0 ? "income" : "expense";
+      title = type === "income" ? "Movimentação de entrada" : "Movimentação de saída";
+      category = type;
+      break;
+  }
 
   return {
     id: entry.id,
@@ -77,7 +101,7 @@ const mapTransactionEntry = (
     time: formatTime(entry.timestamp),
     type,
     icon: TRANSACTION_ICONS[type],
-    category: type,
+    category,
   };
 };
 

@@ -39,9 +39,11 @@ export function SegmentControl({
           key={option.key}
           style={{
             flex: 1,
-            paddingVertical: 8,
+            height: 44,
             paddingHorizontal: 16,
             borderRadius: 16,
+            alignItems: "center",
+            justifyContent: "center",
             backgroundColor:
               activeKey === option.key ? activeColor : "transparent",
           }}
@@ -52,6 +54,7 @@ export function SegmentControl({
               textAlign: "center",
               fontSize: 14,
               fontWeight: "500",
+              lineHeight: 16,
               color: activeKey === option.key ? textColor : inactiveTextColor,
             }}
           >
