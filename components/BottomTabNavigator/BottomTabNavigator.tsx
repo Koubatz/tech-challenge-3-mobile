@@ -4,6 +4,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { HomeTabContent } from "@/components/Home";
+import { Dashboard } from '../Dashboard';
 import { TabBar } from "./TabBar";
 import type { BottomTabNavigatorProps, TabItem } from "./types";
 
@@ -39,15 +40,8 @@ export function BottomTabNavigator({
             </Link>
           </View>
         );
-      case "dashboard":
-        return (
-          <View style={styles.content}>
-            <ContentPlaceholder
-              title="Dashboard"
-              description="Dashboard financeiro (análise dos graficos)"
-            />
-          </View>
-        );
+      case 'dashboard':
+        return <Dashboard />;
       default:
         return (
           <View style={styles.content}>
