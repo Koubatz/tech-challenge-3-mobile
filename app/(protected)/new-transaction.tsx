@@ -1,36 +1,41 @@
+import { Picker } from '@react-native-picker/picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { RadioGroupField } from '@/components/RadioGroupField';
-import type { TransactionLabel, TransactionType } from '@/types/transactions';
+import { useAccount } from '@/hooks/useAccount';
+import { bankingApi, type TransactionType } from '@/services/bankingApi';
 import { formatCurrency } from '@/utils/currency';
 
-type TransactionOption = {
+export type TransactionTypeOption = {
   value: TransactionType;
-  label: TransactionLabel;
+  label: string;
 };
 
-const transactionTypeOptions: TransactionOption[] = [
+export const transactionTypeOptions: TransactionTypeOption[] = [
   {
-    value: 'credit',
-    label: 'Crédito',
+    value: 'DEPOSIT',
+    label: 'Depósito',
   },
   {
-    value: 'debit',
-    label: 'Débito',
+    value: 'WITHDRAWAL',
+    label: 'Saque',
   },
 ];
 
 export default function NewTransaction() {
-  const [transactionType, setTransactionType] = useState<TransactionType>();
+  const { account } = useAccount();
+  const [transactionType, setTransactionType] = useState<TransactionType>('DEPOSIT');
   const [amount, setAmount] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('R$ 0,00');
   const [attachment, setAttachment] = useState<DocumentPicker.DocumentPickerResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleTransactionTypeChange = (value: string) => {
-    setTransactionType(value as TransactionType);
+  const handleTransactionTypeChange = (itemValue: string) => {
+    setTransactionType(itemValue as TransactionType);
   };
   
   const parseCurrencyInput = (input: string): number => {
@@ -63,30 +68,82 @@ export default function NewTransaction() {
     setAttachment(null);
   };
 
-  const handleSubmit = () => {
-    // TODO: Implementar lógica de criação de transação
-    console.log("Transação criada!");
-    console.log("Transação criada!", {
-      transactionType,
-      amount,
-    });
+  const handleSubmit = async () => {
+    if (!account?.accountNumber) {
+      Alert.alert('Erro', 'Dados da conta não disponíveis. Tente novamente.');
+      return;
+    }
+    if (amount <= 0) {
+      Alert.alert('Erro', 'Por favor, insira um valor válido maior que zero.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await bankingApi.performTransaction(
+        account.accountNumber,
+        amount,
+        transactionType
+      );
+      if (result.success) {
+        const transactionTypeLabel = transactionTypeOptions.find(
+          option => option.value === transactionType
+        )?.label || transactionType;
+
+        Alert.alert(
+          'Sucesso',
+          `${transactionTypeLabel} de ${formatCurrency(amount)} realizada com sucesso!\nNovo saldo: ${formatCurrency(result.newBalance)}`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setAmount(0);
+                setDisplayValue('R$ 0,00');
+                setAttachment(null);
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Erro', 'Não foi possível realizar a transação. Tente novamente.');
+      }
+    } catch (error: any) {
+      console.error('Erro ao realizar transação:', error);
+      Alert.alert(
+        'Erro',
+        error?.message || 'Não foi possível realizar a transação. Tente novamente.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen
         options={{
           title: 'Nova transação',
         }}
       />
-      <ScrollView style={styles.container}>
+      <StatusBar style="dark" />
+      <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
           <Text style={styles.label}>Tipo</Text>
-          <RadioGroupField
-            items={transactionTypeOptions}
-            value={transactionType}
-            onValueChange={handleTransactionTypeChange}
-          />
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={transactionType}
+              onValueChange={handleTransactionTypeChange}
+              style={styles.picker}
+              prompt="Selecione o tipo de transação"
+            >
+              {transactionTypeOptions.map((option) => (
+                <Picker.Item
+                  key={option.value}
+                  label={option.label}
+                  value={option.value}
+                />
+              ))}
+            </Picker>
+          </View>
           
           <Text style={styles.label}>Valor</Text>
           <TextInput
@@ -120,14 +177,17 @@ export default function NewTransaction() {
           )}
           
           <TouchableOpacity 
-            style={styles.buttonPrimary} 
+            style={[styles.buttonPrimary, isSubmitting && styles.buttonDisabled]} 
             onPress={handleSubmit}
+            disabled={isSubmitting}
           >
-            <Text style={styles.buttonPrimaryText}>Criar transação</Text>
+            <Text style={styles.buttonPrimaryText}>
+              {isSubmitting ? 'Processando...' : 'Criar transação'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -136,9 +196,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  scrollView: {
+    flex: 1,
+  },
   content: {
     padding: 16,
     gap: 16,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  picker: {
+    height: 50,
   },
   label: {
     fontSize: 16,
@@ -179,6 +251,10 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     marginTop: 16,
+  },
+  buttonDisabled: {
+    backgroundColor: '#ccc',
+    opacity: 0.6,
   },
   buttonPrimaryText: {
     color: '#fff',

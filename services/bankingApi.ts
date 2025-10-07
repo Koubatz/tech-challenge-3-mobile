@@ -1,9 +1,11 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 
+export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL';
+
 type Transaction = {
   id: string;
-  type: 'DEPOSIT' | 'WITHDRAWAL';
+  type: TransactionType;
   amount: number;
   timestamp: string;
   newBalance: number;
@@ -77,7 +79,7 @@ class BankingApiService {
   async performTransaction(
     accountNumber: string,
     amount: number,
-    type: 'DEPOSIT' | 'WITHDRAWAL'
+    type: TransactionType
   ): Promise<{ success: boolean; transactionId: string; newBalance: number }> {
     return this.callFunction('performTransaction', {
       accountNumber,
