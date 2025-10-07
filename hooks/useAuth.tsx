@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from 'firebase/auth';
+import { User, updateProfile } from 'firebase/auth';
 import React, { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
 
 import { ACCOUNT_DETAILS_STORAGE_KEY } from '../constants/storageKeys';
@@ -8,8 +8,16 @@ import { createBankAccount, getCurrentUser, isFirebaseAvailable, onAuthStateChan
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (
+    email: string,
+    password: string,
+    rememberDevice?: boolean
+  ) => Promise<{ success: boolean; error?: string }>;
+  register: (
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -24,6 +32,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const firebaseConfiguredRef = useRef(isFirebaseAvailable());
+  const shouldPersistUserTokenRef = useRef(true);
+
+  const persistUserToken = async (maybeUser: User | null) => {
+    try {
+      if (maybeUser && shouldPersistUserTokenRef.current) {
+        await AsyncStorage.setItem('userToken', maybeUser.uid);
+      } else {
+        await AsyncStorage.removeItem('userToken');
+      }
+    } catch {
+      // Ignorar falhas para não interromper o fluxo principal
+    }
+  };
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -40,18 +61,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const currentUser = getCurrentUser();
       if (currentUser) {
         setUser(currentUser);
-        AsyncStorage.setItem('userToken', currentUser.uid).catch(() => undefined);
+        void persistUserToken(currentUser);
         setLoading(false);
       }
 
       unsubscribe = onAuthStateChange(async (firebaseUser) => {
         setUser(firebaseUser);
 
-        if (firebaseUser) {
-          await AsyncStorage.setItem('userToken', firebaseUser.uid);
-        } else {
-          await AsyncStorage.removeItem('userToken');
-        }
+        await persistUserToken(firebaseUser);
 
         setLoading(false);
       });
@@ -66,10 +83,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (
+    email: string,
+    password: string,
+    rememberDevice: boolean = true
+  ): Promise<{ success: boolean; error?: string }> => {
+    setLoading(true);
+    const previousPersistence = shouldPersistUserTokenRef.current;
+    const shouldPersistSession = rememberDevice !== false;
+    shouldPersistUserTokenRef.current = shouldPersistSession;
+
     try {
-      setLoading(true);
-      
       if (!firebaseConfiguredRef.current) {
         firebaseConfiguredRef.current = isFirebaseAvailable();
       }
@@ -80,10 +104,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const userCredential = await signIn(email, password);
       setUser(userCredential.user);
-      await AsyncStorage.setItem('userToken', userCredential.user.uid);
+      await persistUserToken(userCredential.user);
       
       return { success: true };
     } catch (error: any) {
+      shouldPersistUserTokenRef.current = previousPersistence;
       console.error('Erro no login:', error);
       
       // Tratar erros específicos do Firebase
@@ -121,7 +146,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const register = async (
+    email: string,
+    password: string,
+    name: string
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       setLoading(true);
       
@@ -132,14 +161,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!firebaseConfiguredRef.current) {
         throw new Error('Firebase Auth não está configurado. Verifique as variáveis de ambiente.');
       }
-
       const userCredential = await signUp(email, password);
+      const normalizedName = name.trim();
+
+      if (normalizedName) {
+        try {
+          await updateProfile(userCredential.user, {
+            displayName: normalizedName,
+          });
+        } catch (profileError) {
+          console.warn('Não foi possível atualizar o nome do usuário:', profileError);
+        }
+      }
 
       try {
         const callableResult = await createBankAccount({
           uid: userCredential.user.uid,
           email: userCredential.user.email,
-          ownerName: userCredential.user.email,
+          ownerName: normalizedName || userCredential.user.email,
         });
 
         const callableData = callableResult.data as {
@@ -155,7 +194,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         if (callableData?.accountNumber) {
-          const fallbackOwnerName = callableData.ownerName ?? userCredential.user.email ?? '';
+          const fallbackOwnerName =
+            callableData.ownerName ?? (normalizedName || userCredential.user.email || '');
           const initialAccountDetails = {
             accountNumber: callableData.accountNumber,
             agency: callableData.agency ?? '0001',
@@ -215,7 +255,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       return { 
         success: false, 
-        error: errorMessage 
+        error: errorMessage
       };
     } finally {
       setLoading(false);
@@ -237,6 +277,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await AsyncStorage.removeItem(ACCOUNT_DETAILS_STORAGE_KEY).catch(() => undefined);
     } catch (error) {
       console.error('Erro no logout:', error);
+    } finally {
+      shouldPersistUserTokenRef.current = true;
     }
   };
 
