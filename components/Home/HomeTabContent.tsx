@@ -10,12 +10,19 @@ import {
   TransactionItem as TransactionItemComponent,
   TransactionItemProps,
 } from "@/components/TransactionItem";
+import { useAuth } from "@/hooks/useAuth";
 
 export function HomeTabContent() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
+  const { logout } = useAuth();
 
   const toggleBalance = () => setBalanceVisible((prev) => !prev);
+
+  const handleLogout = React.useCallback(async () => {
+    await logout();
+    router.replace("/");
+  }, [logout]);
 
   const transactions: TransactionItemProps[] = [
     {
@@ -135,7 +142,7 @@ export function HomeTabContent() {
               paddingHorizontal: 16,
               paddingVertical: 12,
               marginHorizontal: -16,
-              marginTop: -80,
+              marginTop: -16,
             }}
           >
             <View
@@ -163,6 +170,26 @@ export function HomeTabContent() {
                 </RNText>
               </View>
             </View>
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              }}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#294FC1" />
+              <RNText
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: "#294FC1",
+                }}
+              >
+                Sair
+              </RNText>
+            </TouchableOpacity>
           </View>
 
           <View
