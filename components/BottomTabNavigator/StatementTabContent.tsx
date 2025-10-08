@@ -1,8 +1,3 @@
-import { useThemeColor } from "@/hooks/useThemeColor";
-import {
-  getAccountStatement,
-  type AccountStatementEntry,
-} from "@/services/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import {
@@ -21,6 +16,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useThemeColor } from "@/hooks/useThemeColor";
+import {
+  getAccountStatement,
+  type AccountStatementEntry,
+} from "@/services/firebase";
+import { formatCurrency } from "@/utils/currency";
 
 const PAGE_SIZE = 10;
 
@@ -50,16 +52,6 @@ export function StatementTabContent() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const currencyFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-        minimumFractionDigits: 2,
-      }),
-    []
-  );
 
   const dateFormatter = useMemo(
     () =>
@@ -167,7 +159,7 @@ export function StatementTabContent() {
                 {description}
               </Text>
               <Text style={[styles.transactionAmount, { color: amountColor }]}>
-                {`${isDeposit ? "+" : "-"}${currencyFormatter.format(Math.abs(item.amount))}`}
+                {`${isDeposit ? "+" : "-"}${formatCurrency(Math.abs(item.amount))}`}
               </Text>
             </View>
             <View style={styles.transactionMeta}>
@@ -176,7 +168,7 @@ export function StatementTabContent() {
               </Text>
               {!isCard && (
                 <Text style={[styles.transactionMetaText, { color: mutedTextColor }]}>
-                  Saldo após operação: {currencyFormatter.format(item.newBalance)}
+                  Saldo após operação: {formatCurrency(item.newBalance)}
                 </Text>
               )}
             </View>
@@ -184,7 +176,7 @@ export function StatementTabContent() {
         </View>
       );
     },
-    [cardBackgroundColor, currencyFormatter, dateFormatter, mutedTextColor, textColor]
+    [cardBackgroundColor, dateFormatter, mutedTextColor, textColor]
   );
 
   const listEmptyComponent = useMemo(() => {
