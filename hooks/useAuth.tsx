@@ -177,7 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const callableResult = await createBankAccount({
           uid: userCredential.user.uid,
-          email: userCredential.user.email,
+          ownerEmail: userCredential.user.email,
           ownerName: normalizedName || userCredential.user.email,
         });
 

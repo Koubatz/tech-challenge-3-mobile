@@ -139,7 +139,7 @@ export const healthCheck = async (): Promise<HttpsCallableResult<HealthCheckResp
 
 type CreateBankAccountPayload = {
   uid: string;
-  email?: string | null;
+  ownerEmail?: string | null;
   ownerName?: string | null;
 };
 
