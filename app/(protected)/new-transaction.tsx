@@ -27,7 +27,7 @@ export const transactionTypeOptions: TransactionTypeOption[] = [
 ];
 
 export default function NewTransaction() {
-  const { account } = useAccount();
+  const { account, refreshAccount } = useAccount();
   const [transactionType, setTransactionType] = useState<TransactionType>('DEPOSIT');
   const [amount, setAmount] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('R$ 0,00');
@@ -85,6 +85,8 @@ export default function NewTransaction() {
         transactionType
       );
       if (result.success) {
+        await refreshAccount();
+        
         const transactionTypeLabel = transactionTypeOptions.find(
           option => option.value === transactionType
         )?.label || transactionType;
