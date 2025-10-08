@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text as RNText, View } from "react-native";
 
+import { formatCurrency } from "@/utils/currency";
+
 export interface TransactionItemProps {
   id: string | number;
   title: string;
@@ -58,8 +60,7 @@ export const TransactionItem = ({
         color: transaction.type === "income" ? "#101142" : "#101142",
       }}
     >
-      {transaction.type === "income" ? "+" : "-"} R${" "}
-      {transaction.amount.toFixed(2).replace(".", ",")}
+      {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
     </RNText>
   </View>
 );
