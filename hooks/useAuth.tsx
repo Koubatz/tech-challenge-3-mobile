@@ -3,7 +3,7 @@ import { User, updateProfile } from 'firebase/auth';
 import React, { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
 
 import { ACCOUNT_DETAILS_STORAGE_KEY } from '../constants/storageKeys';
-import { createBankAccount, getCurrentUser, isFirebaseAvailable, onAuthStateChange, signIn, signOut, signUp } from '../services/firebase';
+import { createBankAccount, getAccountDetails, getCurrentUser, isFirebaseAvailable, onAuthStateChange, signIn, signOut, signUp } from '../services/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -33,6 +33,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const firebaseConfiguredRef = useRef(isFirebaseAvailable());
   const shouldPersistUserTokenRef = useRef(true);
+  const blockAuthStateUpdatesRef = useRef(false);
 
   const persistUserToken = async (maybeUser: User | null) => {
     try {
@@ -59,13 +60,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const currentUser = getCurrentUser();
-      if (currentUser) {
+      if (currentUser && !blockAuthStateUpdatesRef.current) {
         setUser(currentUser);
         void persistUserToken(currentUser);
         setLoading(false);
       }
 
       unsubscribe = onAuthStateChange(async (firebaseUser) => {
+        if (firebaseUser && blockAuthStateUpdatesRef.current) {
+          return;
+        }
+
         setUser(firebaseUser);
 
         await persistUserToken(firebaseUser);
@@ -153,6 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       setLoading(true);
+      blockAuthStateUpdatesRef.current = true;
       
       if (!firebaseConfiguredRef.current) {
         firebaseConfiguredRef.current = isFirebaseAvailable();
@@ -193,21 +199,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           throw new Error(callableData.message ?? 'Não foi possível criar a conta bancária.');
         }
 
-        if (callableData?.accountNumber) {
-          const fallbackOwnerName =
-            callableData.ownerName ?? (normalizedName || userCredential.user.email || '');
-          const initialAccountDetails = {
-            accountNumber: callableData.accountNumber,
-            agency: callableData.agency ?? '0001',
-            ownerName: fallbackOwnerName,
-            balance: callableData.balance ?? 0,
-          };
+        const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-          await AsyncStorage.setItem(
-            ACCOUNT_DETAILS_STORAGE_KEY,
-            JSON.stringify(initialAccountDetails)
-          );
-        }
+        const waitForAccountDetails = async (
+          maxAttempts: number = 6,
+          delayMs: number = 500
+        ) => {
+          let lastError: unknown;
+
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+              const details = await getAccountDetails();
+              if (details?.success && details.accountNumber) {
+                return details;
+              }
+            } catch (detailError) {
+              lastError = detailError;
+            }
+
+            if (attempt < maxAttempts) {
+              await sleep(delayMs);
+            }
+          }
+
+          if (lastError instanceof Error) {
+            throw lastError;
+          }
+
+          throw new Error('Conta bancária ainda não está disponível. Tente novamente.');
+        };
+
+        const accountDetails = await waitForAccountDetails();
+
+        const fallbackOwnerName =
+          accountDetails.ownerName ??
+          callableData?.ownerName ??
+          (normalizedName || userCredential.user.email || '');
+
+        const initialAccountDetails = {
+          accountNumber: accountDetails.accountNumber,
+          agency: accountDetails.agency ?? callableData?.agency ?? '0001',
+          ownerName: fallbackOwnerName,
+          balance: accountDetails.balance ?? callableData?.balance ?? 0,
+        };
+
+        await AsyncStorage.setItem(
+          ACCOUNT_DETAILS_STORAGE_KEY,
+          JSON.stringify(initialAccountDetails)
+        );
       } catch (bankAccountError: any) {
         console.error('Erro ao criar conta bancária:', bankAccountError);
 
@@ -258,6 +297,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error: errorMessage
       };
     } finally {
+      blockAuthStateUpdatesRef.current = false;
       setLoading(false);
     }
   };
