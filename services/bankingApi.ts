@@ -63,14 +63,9 @@ class BankingApiService {
   }
 
   async getAccountStatement(
-    accountNumber?: string,
     transactionType?: TransactionType
   ): Promise<StatementResponse> {
     const payload: Record<string, unknown> = {};
-
-    if (accountNumber) {
-      payload.accountNumber = accountNumber;
-    }
 
     if (transactionType) {
       payload.transactionType = transactionType;
