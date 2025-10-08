@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, {
+import {
   ReactNode,
   createContext,
   useCallback,
@@ -11,7 +11,7 @@ import React, {
 } from 'react';
 
 import { ACCOUNT_DETAILS_STORAGE_KEY } from '../constants/storageKeys';
-import { GetAccountDetailsResponse, getAccountDetails } from '../services/firebase';
+import { type GetAccountDetailsResponse, getAccountDetails } from '../services/firebase';
 import { useAuth } from './useAuth';
 
 type BankAccountDetails = Omit<GetAccountDetailsResponse, 'success'>;

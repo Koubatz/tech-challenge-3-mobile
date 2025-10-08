@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import { useCallback, useState } from "react";
 import { ActivityIndicator, Text as RNText, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -9,7 +9,7 @@ import { RecentTransactions } from "@/components/Home/RecentTransactions";
 import { useAccount } from "@/hooks/useAccount";
 import { useAuth } from "@/hooks/useAuth";
 import { useCards } from "@/hooks/useCards";
-import { formatCurrencyFromNumber } from "@/utils/currency";
+import { formatCurrency, formatCurrencyFromNumber } from "@/utils/currency";
 
 export function HomeTabContent() {
   const [balanceVisible, setBalanceVisible] = useState(true);
@@ -19,7 +19,7 @@ export function HomeTabContent() {
 
   const toggleBalance = () => setBalanceVisible((prev) => !prev);
 
-  const handleLogout = React.useCallback(async () => {
+  const handleLogout = useCallback(async () => {
     await logout();
     router.replace("/");
   }, [logout]);
@@ -148,7 +148,7 @@ export function HomeTabContent() {
                 <RNText
                   style={{ color: "white", fontSize: 32, fontWeight: "800" }}
                 >
-                  {balanceVisible ? formatCurrencyFromNumber(balance) : "••••••••"}
+                  {balanceVisible ? formatCurrency(balance) : "••••••••"}
                 </RNText>
               )}
 
