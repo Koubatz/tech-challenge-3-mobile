@@ -22,25 +22,33 @@ Antes de começar, certifique-se de ter o seguinte instalado em sua máquina:
 ## 📦 Instalação
 
 1. Clone o repositório:
+
    ```bash
    git clone https://github.com/Koubatz/tech-challenge-3-mobile.git
    ```
 
 2. Navegue até o diretório do projeto:
+
    ```bash
    cd tech-challenge-3-mobile
    ```
 
 3. Instale as dependências:
+
    ```bash
    npm install
    ```
 
+4. Configure as variáveis de ambiente:
+
+   Crie um arquivo `.env.local` na raiz do projeto baseado no arquivo `.env.example` e o preencha com as variáveis de ambiente.
+
 ## ▶️ Executando o Projeto
 
 1. Inicie o servidor de desenvolvimento do Metro Bundler:
+
    ```bash
-   npm start
+   npm run start
    ```
 
 2. Após o servidor iniciar, um QR Code será exibido no terminal.
@@ -71,9 +79,11 @@ git checkout -b feat/sua-nova-funcionalidade
 Após finalizar suas alterações e fazer os commits, envie sua branch para o repositório remoto e abra um Pull Request.
 
 1. Envie sua branch:
+
    ```bash
    git push origin feat/sua-nova-funcionalidade
    ```
+
 2. Acesse o repositório no GitHub. Um aviso para criar um Pull Request a partir da sua branch recém-enviada aparecerá. Clique nele.
 3. Preencha um título e uma descrição clara para o seu PR, explicando o que foi feito.
 4. **Aguarde a aprovação**: O fluxo de CI (Integração Contínua) será executado automaticamente para rodar o linter e os testes. Além disso, um dos membros da equipe listados no `CODEOWNERS` precisará revisar e aprovar suas alterações.
