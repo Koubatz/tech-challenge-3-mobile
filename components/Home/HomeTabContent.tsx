@@ -2,15 +2,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { Text as RNText, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text as RNText, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { RecentTransactions } from "@/components/Home/RecentTransactions";
+import { useAccount } from "@/hooks/useAccount";
 import { useAuth } from "@/hooks/useAuth";
+import { useCards } from "@/hooks/useCards";
+import { formatCurrencyFromNumber } from "@/utils/currency";
 
 export function HomeTabContent() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const { logout } = useAuth();
+  const { account, loadingAccount } = useAccount();
+  const { cards, loadingCards } = useCards();
 
   const toggleBalance = () => setBalanceVisible((prev) => !prev);
 
@@ -18,6 +23,21 @@ export function HomeTabContent() {
     await logout();
     router.replace("/");
   }, [logout]);
+
+  const getInitials = (name: string | undefined) => {
+    if (!name) return "U";
+    const names = name.trim().split(" ");
+    if (names.length === 1) return names[0].charAt(0).toUpperCase();
+    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+  };
+
+  const displayName = account?.ownerName || "Usuário";
+  const initials = getInitials(account?.ownerName);
+  const balance = account?.balance ?? 0;
+
+  const creditCard = cards.find((card) => card.cardType === "CREDIT");
+  const invoiceAmount = creditCard?.invoiceAmount ?? 0;
+  const availableLimit = creditCard?.availableLimit ?? 0;
 
   return (
     <SafeAreaView
@@ -59,14 +79,14 @@ export function HomeTabContent() {
                 }}
               >
                 <RNText style={{ color: "white", fontWeight: "bold" }}>
-                  JS
+                  {initials}
                 </RNText>
               </View>
               <View>
                 <RNText
                   style={{ fontSize: 16, fontWeight: "600", color: "#101142" }}
                 >
-                  Olá, João da Silva
+                  Olá, {displayName}
                 </RNText>
               </View>
             </View>
@@ -122,11 +142,15 @@ export function HomeTabContent() {
                 </TouchableOpacity>
               </View>
 
-              <RNText
-                style={{ color: "white", fontSize: 32, fontWeight: "800" }}
-              >
-                {balanceVisible ? "R$ 15.456.789" : "••••••••"}
-              </RNText>
+              {loadingAccount ? (
+                <ActivityIndicator size="large" color="white" />
+              ) : (
+                <RNText
+                  style={{ color: "white", fontSize: 32, fontWeight: "800" }}
+                >
+                  {balanceVisible ? formatCurrencyFromNumber(balance) : "••••••••"}
+                </RNText>
+              )}
 
               <View
                 style={{
@@ -141,11 +165,15 @@ export function HomeTabContent() {
                   >
                     Fatura atual
                   </RNText>
-                  <RNText
-                    style={{ color: "white", fontSize: 16, fontWeight: "600" }}
-                  >
-                    R$ 16.456.789
-                  </RNText>
+                  {loadingCards ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <RNText
+                      style={{ color: "white", fontSize: 16, fontWeight: "600" }}
+                    >
+                      {formatCurrencyFromNumber(invoiceAmount)}
+                    </RNText>
+                  )}
                 </View>
                 <View>
                   <RNText
@@ -153,11 +181,15 @@ export function HomeTabContent() {
                   >
                     Limite disponível
                   </RNText>
-                  <RNText
-                    style={{ color: "white", fontSize: 16, fontWeight: "600" }}
-                  >
-                    R$ 2.000.000
-                  </RNText>
+                  {loadingCards ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <RNText
+                      style={{ color: "white", fontSize: 16, fontWeight: "600" }}
+                    >
+                      {formatCurrencyFromNumber(availableLimit)}
+                    </RNText>
+                  )}
                 </View>
               </View>
             </View>
@@ -168,64 +200,12 @@ export function HomeTabContent() {
               style={{
                 flexDirection: "row",
                 gap: 12,
-                justifyContent: "space-between",
+                justifyContent: "flex-start",
                 marginTop: 5,
               }}
             >
-              <View style={{ alignItems: "center", gap: 20, flex: 1 }}>
-                <View
-                  style={{
-                    width: 80,
-                    height: 70,
-                    borderRadius: 12,
-                    gap: 4,
-                    backgroundColor: "#fff",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Ionicons name="arrow-up" size={24} color="#294FC1" />
-                  <RNText
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "500",
-                      color: "#101142",
-                      textAlign: "center",
-                    }}
-                  >
-                    Transferir
-                  </RNText>
-                </View>
-              </View>
-
-              <View style={{ alignItems: "center", gap: 12, flex: 1 }}>
-                <View
-                  style={{
-                    width: 80,
-                    height: 70,
-                    borderRadius: 12,
-                    backgroundColor: "#fff",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  <Ionicons name="document-text" size={24} color="#294FC1" />
-                  <RNText
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "500",
-                      color: "#101142",
-                      textAlign: "center",
-                    }}
-                  >
-                    Pagar
-                  </RNText>
-                </View>
-              </View>
-
               <TouchableOpacity
-                style={{ alignItems: "center", gap: 12, flex: 1 }}
+                style={{ alignItems: "center", gap: 12 }}
                 onPress={() => router.push("/card")}
                 activeOpacity={0.7}
               >
@@ -253,32 +233,6 @@ export function HomeTabContent() {
                   </RNText>
                 </View>
               </TouchableOpacity>
-
-              <View style={{ alignItems: "center", gap: 12, flex: 1 }}>
-                <View
-                  style={{
-                    width: 80,
-                    height: 70,
-                    borderRadius: 12,
-                    backgroundColor: "#fff",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  <Ionicons name="arrow-down" size={24} color="#294FC1" />
-                  <RNText
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "500",
-                      color: "#101142",
-                      textAlign: "center",
-                    }}
-                  >
-                    Sacar
-                  </RNText>
-                </View>
-              </View>
             </View>
           </View>
         </View>
