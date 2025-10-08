@@ -63,9 +63,14 @@ class BankingApiService {
   }
 
   async getAccountStatement(
+    accountNumber?: string,
     transactionType?: TransactionType
   ): Promise<StatementResponse> {
     const payload: Record<string, unknown> = {};
+
+    if (accountNumber) {
+      payload.accountNumber = accountNumber;
+    }
 
     if (transactionType) {
       payload.transactionType = transactionType;
@@ -84,13 +89,20 @@ class BankingApiService {
   async performTransaction(
     accountNumber: string,
     amount: number,
-    type: TransactionType
+    type: TransactionType,
+    timestamp?: number
   ): Promise<{ success: boolean; transactionId: string; newBalance: number }> {
-    return this.callFunction('performTransaction', {
+    const payload: Record<string, unknown> = {
       accountNumber,
       amount,
       type,
-    });
+    };
+
+    if (typeof timestamp === 'number') {
+      payload.timestamp = timestamp;
+    }
+
+    return this.callFunction('performTransaction', payload);
   }
 
   async createBankAccount(ownerName: string): Promise<{
