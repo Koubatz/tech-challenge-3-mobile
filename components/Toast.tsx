@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
 interface ToastProps {
@@ -17,10 +17,10 @@ export default function Toast({
   onHide, 
   duration = 3000 
 }: ToastProps) {
-  const translateY = React.useRef(new Animated.Value(-100)).current;
-  const opacity = React.useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(-100)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
 
-  const hideToast = React.useCallback(() => {
+  const hideToast = useCallback(() => {
     Animated.parallel([
       Animated.timing(translateY, {
         toValue: -100,

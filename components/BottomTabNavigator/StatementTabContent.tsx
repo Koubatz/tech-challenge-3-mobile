@@ -5,7 +5,7 @@ import {
 } from "@/services/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import React, {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -20,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const PAGE_SIZE = 10;
 
@@ -205,7 +206,7 @@ export function StatementTabContent() {
   }, [emptyIconColor, loading, mutedTextColor, textColor]);
 
   return (
-    <View style={[styles.container]}>
+    <SafeAreaView style={[styles.container]} edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={[styles.title, { color: textColor }]}>Extrato</Text>
@@ -264,7 +265,7 @@ export function StatementTabContent() {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

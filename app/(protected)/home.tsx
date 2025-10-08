@@ -1,9 +1,8 @@
 import { BottomTabNavigator } from "@/components/BottomTabNavigator";
-import React from "react";
-
+import { useState } from "react";
 
 export default function HomeScreen() {
-  const [activeTab, setActiveTab] = React.useState("home");
+  const [activeTab, setActiveTab] = useState("home");
 
   const tabs = [
     {
