@@ -16,7 +16,7 @@ export function useTransactions(accountNumber?: string) {
     setError(null);
 
     try {
-      const response = await bankingApi.getAccountStatement(accountNumber);
+      const response = await bankingApi.getAccountStatement();
       if (response.success) {
         setTransactions(response.transactions);
       }
