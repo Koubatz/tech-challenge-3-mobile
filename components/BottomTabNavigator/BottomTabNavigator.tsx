@@ -1,5 +1,4 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
-import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { HomeTabContent } from "@/components/Home";

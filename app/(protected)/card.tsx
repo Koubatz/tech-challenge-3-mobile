@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -224,21 +224,21 @@ export default function CardsScreen() {
     deleteCard,
   } = useCards();
 
-  const [activeCardIndex, setActiveCardIndex] = React.useState(0);
-  const [cardTransactions, setCardTransactions] = React.useState<
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const [cardTransactions, setCardTransactions] = useState<
     TransactionItemProps[]
   >([]);
-  const [loadingTransactions, setLoadingTransactions] = React.useState(false);
-  const [transactionsError, setTransactionsError] = React.useState<string | null>(
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [transactionsError, setTransactionsError] = useState<string | null>(
     null
   );
-  const [refreshing, setRefreshing] = React.useState(false);
-  const translateY = React.useRef(new Animated.Value(0)).current;
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
-  const isMountedRef = React.useRef(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const translateY = useRef(new Animated.Value(0)).current;
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const isMountedRef = useRef(true);
 
   const cardWidth = screenWidth - 80;
-  const isDeletingActiveCard = React.useMemo(() => {
+  const isDeletingActiveCard = useMemo(() => {
     if (!deletingCardId) {
       return false;
     }
@@ -246,19 +246,19 @@ export default function CardsScreen() {
     return currentCard ? currentCard.id === deletingCardId : false;
   }, [deletingCardId, cards, activeCardIndex]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       isMountedRef.current = false;
     };
   }, []);
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       refreshCards();
     }, [refreshCards])
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (cards.length === 0) {
       if (activeCardIndex !== 0) {
         setActiveCardIndex(0);
@@ -277,14 +277,14 @@ export default function CardsScreen() {
     router.replace(ROUTE_AUTH_LOGIN);
   };
 
-  const displayCards = React.useMemo(() => {
+  const displayCards = useMemo(() => {
     return cards.map(mapCardToDisplay);
   }, [cards]);
 
   const activeCard = cards[activeCardIndex];
   const activeDisplayCard = displayCards[activeCardIndex];
 
-  const loadTransactions = React.useCallback(
+  const loadTransactions = useCallback(
     async (
       cardId: string,
       { showLoader = true }: { showLoader?: boolean } = {}
@@ -339,7 +339,7 @@ export default function CardsScreen() {
     []
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     const cardId = cards[activeCardIndex]?.id;
     if (!cardId) {
       if (isMountedRef.current) {
@@ -352,7 +352,7 @@ export default function CardsScreen() {
     loadTransactions(cardId);
   }, [cards, activeCardIndex, loadTransactions]);
 
-  const handleRefresh = React.useCallback(async () => {
+  const handleRefresh = useCallback(async () => {
     if (!isMountedRef.current) {
       return;
     }
@@ -373,7 +373,7 @@ export default function CardsScreen() {
     }
   }, [refreshCards, loadTransactions, cards, activeCardIndex]);
 
-  const handleCreateCardOfType = React.useCallback(
+  const handleCreateCardOfType = useCallback(
     async (type: PaymentCardType) => {
       try {
         const createdCard = await createCard({
@@ -400,7 +400,7 @@ export default function CardsScreen() {
     [createCard, refreshCards, loadTransactions]
   );
 
-  const handleCreateCard = React.useCallback(() => {
+  const handleCreateCard = useCallback(() => {
     Alert.alert(
       "Criar cartão",
       "Selecione o tipo de cartão que deseja criar.",
@@ -421,7 +421,7 @@ export default function CardsScreen() {
     );
   }, [handleCreateCardOfType]);
 
-  const handleDeleteCardInternal = React.useCallback(
+  const handleDeleteCardInternal = useCallback(
     async (cardId: string) => {
       try {
         await deleteCard(cardId);
@@ -443,7 +443,7 @@ export default function CardsScreen() {
     [deleteCard, refreshCards]
   );
 
-  const handleDeleteCard = React.useCallback(() => {
+  const handleDeleteCard = useCallback(() => {
     const currentCard = cards[activeCardIndex];
     if (!currentCard) {
       return;
@@ -468,7 +468,7 @@ export default function CardsScreen() {
     );
   }, [activeCardIndex, cards, handleDeleteCardInternal]);
 
-  const panResponder = React.useMemo(
+  const panResponder = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gestureState) => {
@@ -519,7 +519,7 @@ export default function CardsScreen() {
     [isCollapsed, translateY]
   );
 
-  const handleScroll = React.useCallback(
+  const handleScroll = useCallback(
     (event: any) => {
       if (!displayCards.length) {
         return;
@@ -540,7 +540,7 @@ export default function CardsScreen() {
     [displayCards.length, cardWidth, activeCardIndex]
   );
 
-  const filteredTransactions = React.useMemo(() => {
+  const filteredTransactions = useMemo(() => {
     return cardTransactions.filter((transaction) => transaction.type === "expense");
   }, [cardTransactions]);
 
