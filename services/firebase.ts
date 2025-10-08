@@ -163,6 +163,7 @@ export type GetAccountDetailsResponse = {
 export type PerformTransactionPayload = {
   amount: number;
   type: 'DEPOSIT' | 'WITHDRAWAL';
+  timestamp?: number;
 };
 
 export type PerformTransactionResponse = {
