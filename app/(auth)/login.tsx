@@ -1,3 +1,7 @@
+import Toast from "@/components/Toast";
+import { ROUTE_PROTECTED_HOME } from "@/constants/routes";
+import { useAuth } from "@/hooks/useAuth";
+import { validateLoginForm, validateRegisterForm } from "@/utils/validation";
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -13,10 +17,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "@/components/Toast";
-import { ROUTE_PROTECTED_HOME } from "@/constants/routes";
-import { useAuth } from "@/hooks/useAuth";
-import { validateLoginForm, validateRegisterForm } from "@/utils/validation";
 
 export default function LoginScreen() {
   const { login, register, loading, isAuthenticated } = useAuth();
