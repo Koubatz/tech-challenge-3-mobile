@@ -144,7 +144,7 @@ export default function LoginScreen() {
           <View style={styles.heroCard}>
             <View style={styles.heroBadge}>
               <Ionicons name="wallet-outline" size={18} color="#294FC1" />
-              <Text style={styles.heroBadgeText}>Levro Bank</Text>
+              <Text style={styles.heroBadgeText}>ByteBank</Text>
             </View>
             <Text style={styles.heroSubtitle}>
               Acompanhe saldos, organize cartões e faça novas transações em poucos toques.

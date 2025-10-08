@@ -20,32 +20,32 @@ import {
   type HttpsCallableResult,
 } from 'firebase/functions';
 
-type FirebaseEnvKey =
-  | 'EXPO_PUBLIC_FIREBASE_API_KEY'
-  | 'EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'
-  | 'EXPO_PUBLIC_FIREBASE_PROJECT_ID'
-  | 'EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'
-  | 'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'
-  | 'EXPO_PUBLIC_FIREBASE_APP_ID';
+// type FirebaseEnvKey =
+//   | 'EXPO_PUBLIC_FIREBASE_API_KEY'
+//   | 'EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'
+//   | 'EXPO_PUBLIC_FIREBASE_PROJECT_ID'
+//   | 'EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'
+//   | 'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'
+//   | 'EXPO_PUBLIC_FIREBASE_APP_ID';
 
-const readEnv = (key: FirebaseEnvKey): string => {
-  const value = process.env[key];
+// const readEnv = (key: FirebaseEnvKey): string => {
+//   const value = process.env[key];
 
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new Error(`Missing Firebase environment variable: ${key}`);
-  }
+//   if (typeof value !== 'string' || value.length === 0) {
+//     throw new Error(`Missing Firebase environment variable: ${key}`);
+//   }
 
-  return value;
-};
+//   return value;
+// };
 
 // Configuração Firebase usando variáveis de ambiente
 const firebaseConfig: FirebaseOptions = {
-  apiKey: readEnv('EXPO_PUBLIC_FIREBASE_API_KEY'),
-  authDomain: readEnv('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'),
-  projectId: readEnv('EXPO_PUBLIC_FIREBASE_PROJECT_ID'),
-  storageBucket: readEnv('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'),
-  messagingSenderId: readEnv('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
-  appId: readEnv('EXPO_PUBLIC_FIREBASE_APP_ID'),
+  apiKey: "AIzaSyAbkeyGBEQ4PBmAvcSOF7dwJblEImV2vpc",
+  authDomain: "fiap-tech-challenge-3-bytebank.firebaseapp.com",
+  projectId: "fiap-tech-challenge-3-bytebank",
+  storageBucket: "fiap-tech-challenge-3-bytebank.firebasestorage.app",
+  messagingSenderId: "673832118783",
+  appId: "1:673832118783:web:e5d5401ee8aaf2e0531fca",
 };
 
 let app: FirebaseApp | null = null;
